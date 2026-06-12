@@ -6931,4 +6931,306 @@ public int updateLogisticsOrder(int id, int supplierId, String lrDate, String lr
         if (con != null) try { con.close(); } catch (Exception e)   { ; }
     }
 }
+
+/**
+ * Returns all unbilled (is_billed=0) active logistics orders.
+ * Each row: [id, lr_no, lr_date, customer_name, destination, dpf]
+ */
+public Vector getUnbilledLRList() throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        String sql = "SELECT l.id, l.lr_no, l.lr_date, "
+                   + " IFNULL(c.name,'') AS customer_name, l.destination, l.dpf, l.customer_id "
+                   + "FROM logistics l "
+                   + "LEFT JOIN customers c ON c.id = l.customer_id "
+                   + "WHERE l.is_active = 1 AND l.is_billed = 0 "
+                   + "ORDER BY l.lr_date ASC, l.id ASC";
+        ps = con.prepareStatement(sql);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString("id"));
+            row.addElement(rs.getString("lr_no"));
+            row.addElement(rs.getString("lr_date"));
+            row.addElement(rs.getString("customer_name"));
+            row.addElement(rs.getString("destination"));
+            row.addElement(rs.getString("dpf"));
+            row.addElement(rs.getString("customer_id")); // index 6
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+// ── getUnbilledLRList now also returns customer_id (index 6) ──
+// (Kept as separate method so callers using indexes 0-5 still work;
+//  getUnbilledLRs.jsp now reads index 6 for customerId in JSON.)
+
+// ── saveTransportBill ─────────────────────────────────────────
+public String saveTransportBill(
+        int customerId, String poNo, String sacCode,
+        double grandTotal, double paidAmount, double balance,
+        int paymentType, int paymentModeInt, int creditDays,
+        int[] lrIds, double[] lrTotals, String[] lrNotes, int[] lrPartCounts,
+        String[] particulars, String[] quantities, String[] rateWts, double[] amounts,
+        int entryUser) throws Exception {
+
+    // Map payment type int → label
+    // 1=Cash, 2=Bank, 3=Mixed
+    final String[] TYPE_LABELS = {"", "Cash", "Bank", "Mixed"};
+    // Map payment mode int → label
+    // 0=None,1=UPI,2=Cheque,3=Credit Card,4=Debit Card,5=NEFT,6=IMPS
+    final String[] MODE_LABELS = {"None", "UPI", "Cheque", "Credit Card", "Debit Card", "NEFT", "IMPS"};
+    String typeLabel = (paymentType >= 1 && paymentType <= 3) ? TYPE_LABELS[paymentType] : "Cash";
+    String modeLabel = (paymentModeInt >= 0 && paymentModeInt <= 6) ? MODE_LABELS[paymentModeInt] : "None";
+    // Store readable string in transport_bill.payment_mode
+    String paymentModeStr = paymentType == 1 ? "Cash" : typeLabel + "/" + modeLabel;
+
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    String invoiceNo = null;
+
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+
+        // Generate invoice_no: YY-count (e.g. 26-1, 26-2)
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int year = cal.get(java.util.Calendar.YEAR) % 100;
+        ps = con.prepareStatement(
+            "SELECT COUNT(id) AS cnt FROM transport_bill WHERE YEAR(bill_date)=YEAR(CURDATE())");
+        rs = ps.executeQuery();
+        int nextCount = 1;
+        if (rs.next()) nextCount = rs.getInt("cnt") + 1;
+        rs.close(); ps.close();
+        invoiceNo = year + "-" + nextCount;
+
+        // Compute due_date if Credit mode (creditDays passed for future use, currently 0)
+        String dueDate = null;
+        if (creditDays > 0) {
+            ps = con.prepareStatement("SELECT DATE_ADD(CURDATE(), INTERVAL ? DAY)");
+            ps.setInt(1, creditDays);
+            rs = ps.executeQuery();
+            if (rs.next()) dueDate = rs.getString(1);
+            rs.close(); ps.close();
+        }
+
+        // Insert transport_bill header
+        ps = con.prepareStatement(
+            "INSERT INTO transport_bill "
+            + "(invoice_no,bill_date,customer_id,po_no,sac_code,grand_total,"
+            + "paid_amount,balance,payment_mode,payment_type,credit_days,due_date,entry_user) "
+            + "VALUES (?,CURDATE(),?,?,?,?,?,?,?,?,?,?,?)",
+            java.sql.Statement.RETURN_GENERATED_KEYS);
+        ps.setString(1, invoiceNo);
+        ps.setInt(2, customerId);
+        ps.setString(3, (poNo != null && !poNo.isEmpty()) ? poNo : null);
+        ps.setString(4, (sacCode != null && !sacCode.isEmpty()) ? sacCode : null);
+        ps.setDouble(5, grandTotal);
+        ps.setDouble(6, paidAmount);
+        ps.setDouble(7, balance);
+        ps.setString(8, paymentModeStr);
+        ps.setInt(9, paymentType);
+        if (creditDays > 0) ps.setInt(10, creditDays);
+        else ps.setNull(10, java.sql.Types.INTEGER);
+        ps.setString(11, dueDate);
+        ps.setInt(12, entryUser);
+        ps.executeUpdate();
+        rs = ps.getGeneratedKeys();
+        int billId = 0;
+        if (rs.next()) billId = rs.getInt(1);
+        rs.close(); ps.close();
+
+        // Insert per-LR rows + particulars
+        int partOffset = 0;
+        for (int i = 0; i < lrIds.length; i++) {
+            // transport_bill_lr
+            ps = con.prepareStatement(
+                "INSERT INTO transport_bill_lr (bill_id,logistics_id,lr_total,notes) VALUES (?,?,?,?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS);
+            ps.setInt(1, billId);
+            ps.setInt(2, lrIds[i]);
+            ps.setDouble(3, lrTotals[i]);
+            ps.setString(4, (lrNotes[i] != null && !lrNotes[i].isEmpty()) ? lrNotes[i] : null);
+            ps.executeUpdate();
+            rs = ps.getGeneratedKeys();
+            int billLrId = 0;
+            if (rs.next()) billLrId = rs.getInt(1);
+            rs.close(); ps.close();
+
+            // transport_bill_details (batch)
+            ps = con.prepareStatement(
+                "INSERT INTO transport_bill_details "
+                + "(bill_id,bill_lr_id,logistics_id,particular,qty,rate_wt,amount,sort_order) "
+                + "VALUES (?,?,?,?,?,?,?,?)");
+            int count = lrPartCounts[i];
+            for (int j = 0; j < count; j++) {
+                int idx = partOffset + j;
+                ps.setInt(1, billId);
+                ps.setInt(2, billLrId);
+                ps.setInt(3, lrIds[i]);
+                ps.setString(4, particulars[idx] != null ? particulars[idx] : "");
+                ps.setString(5, quantities[idx]);
+                ps.setString(6, rateWts[idx]);
+                ps.setDouble(7, amounts[idx]);
+                ps.setInt(8, j + 1);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            ps.close();
+            partOffset += count;
+
+            // Mark LR as billed
+            ps = con.prepareStatement("UPDATE logistics SET is_billed=1 WHERE id=?");
+            ps.setInt(1, lrIds[i]);
+            ps.executeUpdate();
+            ps.close();
+        }
+
+        // Credit balance record (legacy, kept for backward compat)
+        if (creditDays > 0 && balance > 0 && dueDate != null) {
+            ps = con.prepareStatement(
+                "INSERT INTO transport_bill_balance (bill_id,balance_amount,due_date) VALUES (?,?,?)");
+            ps.setInt(1, billId);
+            ps.setDouble(2, balance);
+            ps.setString(3, dueDate);
+            ps.executeUpdate();
+            ps.close();
+        }
+
+        // Insert into transport_bill_payment (payment record)
+        ps = con.prepareStatement(
+            "INSERT INTO transport_bill_payment (bill_id,payment_type,payment_mode,paid_amount,entry_user) "
+            + "VALUES (?,?,?,?,?)");
+        ps.setInt(1, billId);
+        ps.setInt(2, paymentType);
+        ps.setInt(3, paymentModeInt);
+        ps.setDouble(4, paidAmount);
+        ps.setInt(5, entryUser);
+        ps.executeUpdate();
+        ps.close();
+
+        con.commit();
+        return invoiceNo;
+
+    } catch (Exception e) {
+        if (con != null) try { con.rollback(); } catch (Exception ignored) {}
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportBillForPrint ──────────────────────────────────
+public Vector getTransportBillForPrint(int billId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector result = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+
+        // [0] Bill header + customer
+        ps = con.prepareStatement(
+            "SELECT tb.invoice_no, DATE_FORMAT(tb.bill_date,'%d/%m/%Y'), "
+            + " tb.po_no, tb.sac_code, tb.grand_total, tb.paid_amount, tb.balance, "
+            + " tb.payment_mode, tb.credit_days, DATE_FORMAT(tb.due_date,'%d/%m/%Y'), "
+            + " c.name, IFNULL(c.address,''), IFNULL(c.phone_number,''), IFNULL(c.gstin,'') "
+            + "FROM transport_bill tb "
+            + "JOIN customers c ON c.id = tb.customer_id "
+            + "WHERE tb.id = ?");
+        ps.setInt(1, billId);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            Vector hdr = new Vector();
+            for (int i = 1; i <= 14; i++) hdr.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            result.addElement(hdr);
+        }
+        rs.close(); ps.close();
+
+        // [1] LR list
+        ps = con.prepareStatement(
+            "SELECT tlr.id, tlr.logistics_id, l.lr_no, DATE_FORMAT(l.lr_date,'%d/%m/%Y'), "
+            + " IFNULL(tlr.notes,''), tlr.lr_total "
+            + "FROM transport_bill_lr tlr "
+            + "JOIN logistics l ON l.id = tlr.logistics_id "
+            + "WHERE tlr.bill_id = ? ORDER BY tlr.id ASC");
+        ps.setInt(1, billId);
+        rs = ps.executeQuery();
+        Vector lrList = new Vector();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 6; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            lrList.addElement(row);
+        }
+        rs.close(); ps.close();
+        result.addElement(lrList);
+
+        // [2] Particulars (indexed by bill_lr_id)
+        ps = con.prepareStatement(
+            "SELECT bill_lr_id, particular, IFNULL(qty,''), IFNULL(rate_wt,''), amount "
+            + "FROM transport_bill_details WHERE bill_id = ? ORDER BY bill_lr_id, sort_order");
+        ps.setInt(1, billId);
+        rs = ps.executeQuery();
+        Vector partList = new Vector();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 5; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            partList.addElement(row);
+        }
+        rs.close(); ps.close();
+        result.addElement(partList);
+
+        // [3] Company details
+        ps = con.prepareStatement(
+            "SELECT shop_name, IFNULL(address,''), IFNULL(gstin,''), "
+            + " IFNULL(bank_details,'') "
+            + "FROM company_details LIMIT 1");
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            Vector co = new Vector();
+            for (int i = 1; i <= 4; i++) co.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            result.addElement(co);
+        }
+        rs.close(); ps.close();
+
+        return result;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportBillIdByLrId ───────────────────────────────
+// Returns the transport_bill.id for a given logistics row, or 0 if not found.
+public int getTransportBillIdByLrId(int lrId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT bill_id FROM transport_bill_lr WHERE logistics_id = ? LIMIT 1");
+        ps.setInt(1, lrId);
+        rs = ps.executeQuery();
+        if (rs.next()) return rs.getInt(1);
+        return 0;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
 }

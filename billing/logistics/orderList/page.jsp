@@ -68,6 +68,7 @@ String type = request.getParameter("type");
         .badge-unbilled { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
         .badge-billed   { background: #d1e7dd; color: #0a3622; border: 1px solid #a3cfbb; }
         .tbl-amt { text-align: right; min-width: 64px; }
+        .filter-card .form-control, .filter-card .form-select { font-size: 13px; }
     </style>
 </head>
 <body>
@@ -100,6 +101,43 @@ String type = request.getParameter("type");
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="card mst-card mb-3 filter-card">
+        <div class="card-body py-2 px-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Customer</label>
+                    <input type="text" id="fltCustomer" class="form-control fg-inp" placeholder="Search customer..." style="min-width:150px;">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Supplier</label>
+                    <input type="text" id="fltSupplier" class="form-control fg-inp" placeholder="Search supplier..." style="min-width:150px;">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Destination</label>
+                    <input type="text" id="fltDest" class="form-control fg-inp" placeholder="Search destination..." style="min-width:140px;">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">LR No</label>
+                    <input type="text" id="fltLrNo" class="form-control fg-inp" placeholder="Search LR no..." style="min-width:120px;">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Status</label>
+                    <select id="fltStatus" class="form-select fg-inp" style="min-width:120px;">
+                        <option value="">All</option>
+                        <option value="unbilled">Unbilled</option>
+                        <option value="billed">Billed</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="bb bb-secondary" onclick="clearFilters()">
+                        <i class="fa-solid fa-xmark me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -178,7 +216,12 @@ if (orders.isEmpty()) {
             lrDateDisplay = outFmt.format(inFmt.parse(lrDate));
         } catch (Exception _e) {}%>
                     <!-- VIEW ROW -->
-                    <tr class="view-row" id="view-<%=id%>">
+                    <tr class="view-row" id="view-<%=id%>"
+                        data-customer="<%=row.get(6).toString().toLowerCase()%>"
+                        data-supplier="<%=row.get(2).toString().toLowerCase()%>"
+                        data-dest="<%=row.get(7).toString().toLowerCase()%>"
+                        data-lrno="<%=row.get(4).toString().toLowerCase()%>"
+                        data-status="<%=badgeTxt.toLowerCase()%>">
                         <td><%=sno%></td>
                         <td><%=row.get(2).toString()%></td>
                         <td><%=lrDateDisplay%></td>
@@ -199,8 +242,16 @@ if (orders.isEmpty()) {
                             <button class="btn btn-sm btn-warning"
                                 onclick="showEdit('<%=id%>','<%=suppId%>','<%=suppName%>','<%=lrDate%>','<%=lrNo%>','<%=custId%>','<%=custName%>','<%=dest%>','<%=dpfStr%>','<%=lhStr%>','<%=loadStr%>','<%=ulStr%>','<%=lcStr%>','<%=hotingStr%>')">
                                 <i class="fas fa-pen"></i> Edit
-                            </button>
-<%  } %>
+                            </button><%  } else { %>
+<%
+                int tbBillId = 0;
+                try { tbBillId = bill.getTransportBillIdByLrId(Integer.parseInt(id.toString())); } catch (Exception _ex) {}
+                if (tbBillId > 0) { %>
+                            <a href="<%=contextPath%>/logistics/transportBill/print.jsp?billId=<%=tbBillId%>" target="_blank"
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-print"></i> Print
+                            </a>
+<%              } %><%  } %>
                         </td>
                     </tr>
 <%
@@ -452,6 +503,35 @@ function saveEdit() {
         Swal.fire({ icon: 'error', title: 'Error', text: 'Server error. Please try again.' });
     });
 }
+
+// ── Live table filters ──────────────────────────────────────────
+function applyFilters() {
+    const customer = $('#fltCustomer').val().trim().toLowerCase();
+    const supplier = $('#fltSupplier').val().trim().toLowerCase();
+    const dest     = $('#fltDest').val().trim().toLowerCase();
+    const lrno     = $('#fltLrNo').val().trim().toLowerCase();
+    const status   = $('#fltStatus').val().toLowerCase();
+
+    $('#orderTable tbody tr.view-row').each(function() {
+        const r = $(this);
+        const match =
+            (!customer || r.data('customer').includes(customer)) &&
+            (!supplier || r.data('supplier').includes(supplier)) &&
+            (!dest     || r.data('dest').includes(dest))         &&
+            (!lrno     || r.data('lrno').includes(lrno))         &&
+            (!status   || r.data('status') === status);
+        r.toggle(match);
+    });
+}
+function clearFilters() {
+    $('#fltCustomer, #fltSupplier, #fltDest, #fltLrNo').val('');
+    $('#fltStatus').val('');
+    applyFilters();
+}
+$(function() {
+    $('#fltCustomer, #fltSupplier, #fltDest, #fltLrNo').on('input', applyFilters);
+    $('#fltStatus').on('change', applyFilters);
+});
 </script>
 </body>
 </html>

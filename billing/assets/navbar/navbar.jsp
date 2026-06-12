@@ -101,6 +101,10 @@ for (int i = 0; i < vecPer.size(); i++) {
       <i class="fas fa-list"></i>
       <span>LR Order List</span>
     </a>
+    <a href="<%=request.getContextPath()%>/logistics/transportBill/page.jsp" class="sidebar-item">
+      <i class="fa-solid fa-file-invoice-dollar"></i>
+      <span>Transportation Bill</span>
+    </a>
     <% } %>
 <% if (permissions.contains(2)) { %>
     <div class="sidebar-dropdown">
