@@ -6776,6 +6776,7 @@ public Vector getLogisticsCustomerList() throws Exception {
  */
 public int saveLogisticsOrder(int supplierId, String lrDate, String lrNo,
                               int customerId, String destination,
+                              String vehicleNo, String driverPhone,
                               double dpf, double lh, double loadAmt,
                               double ul, double hoting, double lc, int entryUser) throws Exception {
     Connection con = null;
@@ -6788,9 +6789,10 @@ public int saveLogisticsOrder(int supplierId, String lrDate, String lrNo,
 
         String sql = "INSERT INTO transport_bill_order "
                    + "(supplier_id, lr_date, lr_no, customer_id, destination, "
+                   + " vehicle_no, driver_phone, "
                    + " dpf, lh, load_amt, ul, hoting, lc, "
                    + " is_billed, is_active, entry_user, entry_date_time) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, NOW())";
+                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, NOW())";
 
         ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         ps.setInt(1,    supplierId);
@@ -6798,13 +6800,15 @@ public int saveLogisticsOrder(int supplierId, String lrDate, String lrNo,
         ps.setString(3, lrNo);
         ps.setInt(4,    customerId);
         ps.setString(5, destination);
-        ps.setDouble(6, dpf);
-        ps.setDouble(7, lh);
-        ps.setDouble(8, loadAmt);
-        ps.setDouble(9, ul);
-        ps.setDouble(10, hoting);
-        ps.setDouble(11, lc);
-        ps.setInt(12,   entryUser);
+        ps.setString(6, vehicleNo  != null ? vehicleNo.trim().toUpperCase()  : null);
+        ps.setString(7, driverPhone != null ? driverPhone.trim() : null);
+        ps.setDouble(8, dpf);
+        ps.setDouble(9, lh);
+        ps.setDouble(10, loadAmt);
+        ps.setDouble(11, ul);
+        ps.setDouble(12, hoting);
+        ps.setDouble(13, lc);
+        ps.setInt(14,   entryUser);
         ps.executeUpdate();
 
         rs = ps.getGeneratedKeys();
@@ -6859,7 +6863,8 @@ public Vector getLogisticsOrderList(String fromDate, String toDate) throws Excep
         con = util.DBConnectionManager.getConnectionFromPool();
         String sql = "SELECT l.id, l.supplier_id, IFNULL(s.name,'') AS supplier_name, "
                    + " l.lr_date, l.lr_no, l.customer_id, IFNULL(c.name,'') AS customer_name, "
-                   + " l.destination, l.dpf, l.lh, l.load_amt, l.ul, l.hoting, l.lc, l.is_billed "
+                   + " l.destination, l.dpf, l.lh, l.load_amt, l.ul, l.hoting, l.lc, l.is_billed, "
+                   + " IFNULL(l.vehicle_no,'') AS vehicle_no, IFNULL(l.driver_phone,'') AS driver_phone "
                    + "FROM transport_bill_order l "
                    + "LEFT JOIN prod_supplier s ON s.id = l.supplier_id "
                    + "LEFT JOIN customers c ON c.id = l.customer_id "
@@ -6886,6 +6891,8 @@ public Vector getLogisticsOrderList(String fromDate, String toDate) throws Excep
             row.addElement(rs.getString("hoting"));
             row.addElement(rs.getString("lc"));
             row.addElement(rs.getString("is_billed"));
+            row.addElement(rs.getString("vehicle_no"));
+            row.addElement(rs.getString("driver_phone"));
             vec.addElement(row);
         }
         return vec;

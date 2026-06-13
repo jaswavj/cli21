@@ -516,13 +516,10 @@ if (userId == null) {
                                 <button type="button" class="pay-mode-btn" data-type="2" onclick="selectPayType(this)">
                                     <i class="fa-solid fa-building-columns fa-xs"></i> Bank
                                 </button>
-                                <button type="button" class="pay-mode-btn" data-type="3" onclick="selectPayType(this)">
-                                    <i class="fa-solid fa-shuffle fa-xs"></i> Mixed
-                                </button>
                             </div>
                         </div>
 
-                        <!-- Payment Mode (enabled for Bank / Mixed) -->
+                        <!-- Payment Mode (enabled for Bank) -->
                         <div id="payModeWrap" style="opacity:0.45;">
                             <div class="pay-field-label">
                                 <i class="fa-solid fa-credit-card fa-sm"></i> Payment Mode
@@ -535,6 +532,13 @@ if (userId == null) {
                                 <option value="5">NEFT</option>
                                 <option value="6">IMPS</option>
                             </select>
+                        </div>
+
+                        <!-- Credit Days (shown when balance > 0) -->
+                        <div class="credit-days-wrap" id="creditDaysWrap">
+                            <span class="cdl"><i class="fa-solid fa-calendar-days fa-xs me-1"></i>Credit Days</span>
+                            <input type="number" id="creditDaysInp" class="credit-days-inp" min="1" max="365" placeholder="e.g. 30">
+                            <span class="cdunit">days</span>
                         </div>
 
                     </div><!-- /pay-fields -->
@@ -972,6 +976,13 @@ function calcBalance() {
     } else {
         $bal.attr('title', '');
     }
+    // Show/hide credit days box
+    if (balance > 0.001) {
+        $('#creditDaysWrap').addClass('visible');
+    } else {
+        $('#creditDaysWrap').removeClass('visible');
+        $('#creditDaysInp').val('');
+    }
 }
 
 /* ── Payment mode selection ── */
@@ -982,7 +993,7 @@ function selectPayType(btn) {
     if (type === 1) { // Cash — disable mode
         $('#payModeSelect').prop('disabled', true);
         $('#payModeWrap').css('opacity', '0.45');
-    } else { // Bank or Mixed — enable mode, auto-select UPI if blank
+    } else { // Bank — enable mode, auto-select UPI if blank
         $('#payModeSelect').prop('disabled', false);
         if (!$('#payModeSelect').val()) $('#payModeSelect').val('1');
         $('#payModeWrap').css('opacity', '1');
@@ -1004,7 +1015,7 @@ function saveBill() {
     // Collect payment type & mode
     const payType    = parseInt($('#payTypeGroup .pay-mode-btn.active').data('type')) || 1;
     const payModeInt = payType === 1 ? 0 : (parseInt($('#payModeSelect').val()) || 1);
-    const creditDays = 0;
+    const creditDays = parseInt($('#creditDaysInp').val()) || 0;
 
     const totalText = $('#gtAmount').text().replace(/[^\.0-9]/g, '');
     const grandTotal  = parseFloat(totalText) || 0;
@@ -1042,7 +1053,7 @@ function saveBill() {
         balance,
         paymentType:  payType,
         paymentModeInt: payModeInt,
-        creditDays:   0,
+        creditDays,
         lrs
     };
 
@@ -1094,6 +1105,8 @@ function resetAll(skipConfirm) {
         $('#payEmptyState').show();
         $('#paidAmount').val('');
         $('#balanceAmount').val('');
+        $('#creditDaysInp').val('');
+        $('#creditDaysWrap').removeClass('visible');
         $('#poNo').val('');
         $('#sacCode').val('');
         $('#payTypeGroup .pay-mode-btn').removeClass('active');

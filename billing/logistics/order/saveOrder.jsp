@@ -14,6 +14,8 @@ String lrDate           = request.getParameter("lrDate");
 String lrNo             = request.getParameter("lrNo");
 String customerIdParam  = request.getParameter("customerId");
 String destination      = request.getParameter("destination");
+String vehicleNo        = request.getParameter("vehicleNo");
+String driverPhone      = request.getParameter("driverPhone");
 String dpfParam         = request.getParameter("dpf");
 String lhParam          = request.getParameter("lh");
 String loadAmtParam     = request.getParameter("loadAmt");
@@ -32,6 +34,7 @@ try {
     double lc         = (lcParam      != null && !lcParam.trim().isEmpty())      ? Double.parseDouble(lcParam)      : 0;
 
     bill.saveLogisticsOrder(supplierId, lrDate, lrNo, customerId, destination,
+                            vehicleNo, driverPhone,
                             dpf, lh, loadAmt, ul, hoting, lc, userId);
 
     response.sendRedirect(request.getContextPath()

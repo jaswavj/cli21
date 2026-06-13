@@ -224,7 +224,7 @@ String contextPath = request.getContextPath();
                 <span class="inv-val">: <%= hdr.get(1) %></span>
             </div>
             <div class="inv-row">
-                <span class="inv-lbl">PO No</span>
+                <span class="inv-lbl">PO No/Job No</span>
                 <span class="inv-val">: <%= hdr.get(2).toString().isEmpty() ? "-" : hdr.get(2) %></span>
             </div>
             <div class="inv-row">
@@ -303,7 +303,7 @@ String contextPath = request.getContextPath();
         <% if (!lrNotes.isEmpty()) { %>
             <tr class="lr-note-row">
                 <td></td><td></td>
-                <td colspan="4">(Note: <%= lrNotes %>)</td>
+                <td colspan="4">(Note: <%= lrNotes.replace("\r\n", "<br>").replace("\n", "<br>").replace("\r", "<br>") %>)</td>
             </tr>
         <% } %>
         <% } %>

@@ -130,10 +130,9 @@ String type = request.getParameter("type");
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>
-                        <th>Supplier</th>
+                        <th>Customer</th>
                         <th>Date</th>
                         <th>LR No</th>
-                        <th>Customer</th>
                         <th>Destination</th>
                         <th class="tbl-amt">DPF</th>
                         <th class="tbl-amt">LH</th>
@@ -145,6 +144,7 @@ String type = request.getParameter("type");
                         <th class="tbl-amt">Profit</th>
                         <th>Status</th>
                         <th>Action</th>
+                        <th>Supplier</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -172,6 +172,8 @@ if (orders.isEmpty()) {
         double hoting     = Double.parseDouble(row.get(12).toString());
         double lc         = Double.parseDouble(row.get(13).toString());
         int    isBilled   = Integer.parseInt(row.get(14).toString());
+        String vehicleNo  = row.get(15).toString();
+        String driverPh   = row.get(16).toString();
         double profit     = dpf - (lh + load + ul + lc + hoting);
         double costing    = lh + load + ul + lc + hoting;
         String profitCls  = profit >= 0 ? "profit-pos" : "profit-neg";
@@ -199,10 +201,9 @@ if (orders.isEmpty()) {
                         data-lrno="<%=row.get(4).toString().toLowerCase()%>"
                         data-status="<%=badgeTxt.toLowerCase()%>">
                         <td><%=sno%></td>
-                        <td><%=row.get(2).toString()%></td>
+                        <td><%=row.get(6).toString()%></td>
                         <td><%=lrDateDisplay%></td>
                         <td><%=row.get(4).toString()%></td>
-                        <td><%=row.get(6).toString()%></td>
                         <td><%=row.get(7).toString()%></td>
                         <td class="tbl-amt"><%=dpfStr%></td>
                         <td class="tbl-amt"><%=lhStr%></td>
@@ -229,6 +230,19 @@ if (orders.isEmpty()) {
                             </button>
 <%              } %><%  } %>
                         </td>
+<%
+        // Build tooltip for vehicle/driver info
+        StringBuilder suppTip = new StringBuilder();
+        if (!vehicleNo.isEmpty()) suppTip.append("Vehicle: ").append(vehicleNo.replace("'","&#39;"));
+        if (!driverPh.isEmpty()) { if (suppTip.length() > 0) suppTip.append(" | "); suppTip.append("Driver: ").append(driverPh.replace("'","&#39;")); }
+        String suppTipStr = suppTip.toString();
+%>
+<%  if (!suppTipStr.isEmpty()) { %>
+                        <td data-bs-toggle="tooltip" data-bs-placement="left"
+                            title="<%=suppTipStr%>" style="cursor:help;"><%=row.get(2).toString()%></td>
+<%  } else { %>
+                        <td><%=row.get(2).toString()%></td>
+<%  } %>
                     </tr>
 <%
         sno++;
@@ -375,6 +389,11 @@ document.addEventListener('DOMContentLoaded', function() {
 var contextPath  = '<%=contextPath%>';
 
 $(function() {
+    // Init Bootstrap tooltips
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+        new bootstrap.Tooltip(el);
+    });
+
     <% if (msg != null) { %>
     Swal.fire({
         icon: '<%= "danger".equals(type) ? "error" : ("warning".equals(type) ? "warning" : "success") %>',

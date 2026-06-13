@@ -32,7 +32,7 @@ try {
     double balance     = obj.get("balance").getAsDouble();
     int    paymentType    = obj.has("paymentType")    ? obj.get("paymentType").getAsInt()    : 1;
     int    paymentModeInt = obj.has("paymentModeInt") ? obj.get("paymentModeInt").getAsInt() : 0;
-    int    creditDays  = 0;
+    int    creditDays     = obj.has("creditDays")     ? obj.get("creditDays").getAsInt()     : 0;
 
     JsonArray lrsArr   = obj.getAsJsonArray("lrs");
     int nLRs           = lrsArr.size();

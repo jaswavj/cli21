@@ -62,7 +62,21 @@ String type = request.getParameter("type");
                     </div>
                 </div>
 
-                <!-- Row 2 : LR No + Customer -->
+                <!-- Row 2 : Vehicle No + Driver Phone -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Vehicle Number</label>
+                        <input type="text" name="vehicleNo" id="vehicleNo" class="form-control fg-inp"
+                               placeholder="e.g. TN01AB1234" maxlength="50" style="text-transform:uppercase;">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Driver Phone</label>
+                        <input type="text" name="driverPhone" id="driverPhone" class="form-control fg-inp"
+                               placeholder="10-digit mobile" maxlength="20" inputmode="numeric">
+                    </div>
+                </div>
+
+                <!-- Row 3 : LR No + Customer -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">LR No</label>
@@ -268,6 +282,7 @@ function resetForm() {
     $('#supplierId, #customerId').val('');
     $('#supplierName, #customerName').val('');
     $('#supplierError, #customerError').hide();
+    $('#vehicleNo, #driverPhone').val('');
     clearLrStatus();
     lrNoValid   = true;
     lrNoChecked = false;
