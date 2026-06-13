@@ -11,32 +11,6 @@ if (userId == null) {
     return;
 }
 
-// Build supplier JSON for autocomplete
-StringBuilder supplierJson = new StringBuilder("[");
-try {
-    Vector suppliers = bill.getLogisticsSupplierList();
-    for (int i = 0; i < suppliers.size(); i++) {
-        if (i > 0) supplierJson.append(",");
-        Vector srow = (Vector) suppliers.get(i);
-        String sname = srow.get(1).toString().replace("\\","\\\\").replace("\"","\\\"");
-        supplierJson.append("{\"id\":").append(srow.get(0)).append(",\"label\":\"").append(sname).append("\"}");
-    }
-} catch (Exception ex) {}
-supplierJson.append("]");
-
-// Build customer JSON for autocomplete
-StringBuilder customerJson = new StringBuilder("[");
-try {
-    Vector customers = bill.getLogisticsCustomerList();
-    for (int i = 0; i < customers.size(); i++) {
-        if (i > 0) customerJson.append(",");
-        Vector crow = (Vector) customers.get(i);
-        String cname = crow.get(1).toString().replace("\\","\\\\").replace("\"","\\\"");
-        customerJson.append("{\"id\":").append(crow.get(0)).append(",\"label\":\"").append(cname).append("\"}");
-    }
-} catch (Exception ex) {}
-customerJson.append("]");
-
 String msg  = request.getParameter("msg");
 String type = request.getParameter("type");
 %>
@@ -181,8 +155,6 @@ String type = request.getParameter("type");
 </div>
 
 <script>
-var supplierData = <%=supplierJson%>;
-var customerData = <%=customerJson%>;
 var lrNoValid    = true;
 var lrNoChecked  = false;
 
@@ -198,34 +170,34 @@ $(function() {
     history.replaceState(null, '', window.location.pathname);
     <% } %>
 
-    // Supplier autocomplete
+    // Supplier autocomplete (AJAX)
     $('#supplierName').autocomplete({
-        source: supplierData,
-        minLength: 0,
+        source: function(request, response) {
+            $.getJSON('<%=request.getContextPath()%>/logistics/order/getSuppliers.jsp', { term: request.term }, response);
+        },
+        minLength: 1,
         select: function(event, ui) {
             $('#supplierId').val(ui.item.id);
             $('#supplierName').val(ui.item.label);
             $('#supplierError').hide();
             return false;
         }
-    }).on('focus', function() {
-        if (!$(this).val()) $(this).autocomplete('search', '');
     }).on('input', function() {
         $('#supplierId').val('');
     });
 
-    // Customer autocomplete
+    // Customer autocomplete (AJAX)
     $('#customerName').autocomplete({
-        source: customerData,
-        minLength: 0,
+        source: function(request, response) {
+            $.getJSON('<%=request.getContextPath()%>/logistics/order/getCustomers.jsp', { term: request.term }, response);
+        },
+        minLength: 1,
         select: function(event, ui) {
             $('#customerId').val(ui.item.id);
             $('#customerName').val(ui.item.label);
             $('#customerError').hide();
             return false;
         }
-    }).on('focus', function() {
-        if (!$(this).val()) $(this).autocomplete('search', '');
     }).on('input', function() {
         $('#customerId').val('');
     });

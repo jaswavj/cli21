@@ -32,7 +32,7 @@ response.setDateHeader("Expires", 0);
 <body>
     
 <iframe 
-                    src="billing.jsp" 
+                    src="page.jsp" 
                     width="100%" 
                     height="100%" 
                     frameborder="0"

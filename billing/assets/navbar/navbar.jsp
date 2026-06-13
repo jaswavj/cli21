@@ -86,27 +86,44 @@ for (int i = 0; i < vecPer.size(); i++) {
       <span class="logout-text">Logout</span>
     </a>
   </div>
-  <% if (permissions.contains(1)) { %>
-    <a href="<%=request.getContextPath()%>/billing/billing.jsp" class="sidebar-item">
-      <i class="fas fa-file-invoice"></i>
-      <span>Billing</span>
-    </a>
-    <% } %>
+
 <% if (permissions.contains(1)) { %>
     <a href="<%=request.getContextPath()%>/logistics/order/page.jsp" class="sidebar-item">
       <i class="fas fa-truck"></i>
       <span>LR Order</span>
     </a>
+<% } %>
+<% if (permissions.contains(2)) { %>
     <a href="<%=request.getContextPath()%>/logistics/orderList/page.jsp" class="sidebar-item">
       <i class="fas fa-list"></i>
       <span>LR Order List</span>
     </a>
+<% } %>
+<% if (permissions.contains(3)) { %>
     <a href="<%=request.getContextPath()%>/logistics/transportBill/page.jsp" class="sidebar-item">
       <i class="fa-solid fa-file-invoice-dollar"></i>
       <span>Transportation Bill</span>
     </a>
-    <% } %>
-<% if (permissions.contains(2)) { %>
+<% } %>
+<% if (permissions.contains(4)) { %>
+    <a href="<%=request.getContextPath()%>/logistics/balanceCollection/page.jsp" class="sidebar-item">
+      <i class="fa-solid fa-money-bill-wave"></i>
+      <span>Balance Collection</span>
+    </a>
+<% } %>
+<% if (permissions.contains(5)) { %>
+    <a href="<%=request.getContextPath()%>/logistics/balanceCollection/report.jsp" class="sidebar-item">
+      <i class="fa-solid fa-file-invoice"></i>
+      <span>Collection Report</span>
+    </a>
+<% } %>
+<% if (permissions.contains(6)) { %>
+    <a href="<%=request.getContextPath()%>/logistics/profitReport/page.jsp" class="sidebar-item">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Profit Report</span>
+    </a>
+<% } %>
+<% if (permissions.contains(7)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#productMenu">
         <i class="fas fa-box"></i>
@@ -119,52 +136,8 @@ for (int i = 0; i < vecPer.size(); i++) {
         <a href="<%=request.getContextPath()%>/product/master/supplier/page.jsp" class="sidebar-subitem">Supplier</a>
         </div>
     </div>
-    <% } %>
-
+<% } %>
 <% if (permissions.contains(8)) { %>
-    <div class="sidebar-dropdown">
-      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#statisticsMenu">
-        <i class="fas fa-chart-pie"></i>
-        <span>Statistics</span>
-        <i class="fas fa-chevron-down ms-auto"></i>
-      </a>
-      <div class="collapse sidebar-submenu" id="statisticsMenu">
-        <a href="<%=request.getContextPath()%>/reports/profitAnalysis/page.jsp" class="sidebar-item">
-          <i class="fas fa-chart-pie me-2"></i>Profit Analysis Report
-        </a>
-      </div>
-    </div>
-    <% } %>
-  <div class="sidebar-menu">
-    
-
-    
-
-    
-    
-
-    
-
-    
-
-    
-
-    
-    <% if (permissions.contains(10)) { %>
-    <div class="sidebar-dropdown">
-      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#chequeMenu">
-        <i class="fas fa-money-check-alt"></i>
-        <span>Credit Management</span>
-        <i class="fas fa-chevron-down ms-auto"></i>
-      </a>
-      <div class="collapse sidebar-submenu" id="chequeMenu">
-        <a href="<%=request.getContextPath()%>/billing/customer/index.jsp" class="sidebar-subitem">Customers Balance</a>
-        <a href="<%=request.getContextPath()%>/product/supplierPayment/page.jsp" class="sidebar-subitem">Supplier Payment</a>
-      </div>
-    </div>
-    <% } %>
-
-    <% if (permissions.contains(7)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#adminReportMenu">
         <i class="fas fa-chart-pie"></i>
@@ -176,9 +149,11 @@ for (int i = 0; i < vecPer.size(); i++) {
         <a href="<%=request.getContextPath()%>/admin/userCreate/page.jsp" class="sidebar-subitem">Create User</a>
         <a href="<%=request.getContextPath()%>/admin/permission/page.jsp" class="sidebar-subitem">Module Permission</a>
         <a href="<%=request.getContextPath()%>/admin/changePassword/changePassword.jsp" class="sidebar-subitem">Change Password</a>
+        <a href="<%=request.getContextPath()%>/admin/cancelOrderReport/page.jsp" class="sidebar-subitem">Cancel Order Report</a>
+        <a href="<%=request.getContextPath()%>/admin/cancelBillReport/page.jsp" class="sidebar-subitem">Cancel Bill Report</a>
       </div>
         </div>
-    <% } %>
+<% } %>
 
     
     

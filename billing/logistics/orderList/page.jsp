@@ -26,31 +26,6 @@ try {
     orders = bill.getLogisticsOrderList(fromDate, toDate);
 } catch (Exception ex) { ex.printStackTrace(); }
 
-// Build supplier & customer JSON for autocomplete in edit rows
-StringBuilder supplierJson = new StringBuilder("[");
-try {
-    Vector suppliers = bill.getLogisticsSupplierList();
-    for (int i = 0; i < suppliers.size(); i++) {
-        if (i > 0) supplierJson.append(",");
-        Vector srow = (Vector) suppliers.get(i);
-        String sname = srow.get(1).toString().replace("\\","\\\\").replace("\"","\\\"");
-        supplierJson.append("{\"id\":").append(srow.get(0)).append(",\"label\":\"").append(sname).append("\"}");
-    }
-} catch (Exception ex) {}
-supplierJson.append("]");
-
-StringBuilder customerJson = new StringBuilder("[");
-try {
-    Vector customers = bill.getLogisticsCustomerList();
-    for (int i = 0; i < customers.size(); i++) {
-        if (i > 0) customerJson.append(",");
-        Vector crow = (Vector) customers.get(i);
-        String cname = crow.get(1).toString().replace("\\","\\\\").replace("\"","\\\"");
-        customerJson.append("{\"id\":").append(crow.get(0)).append(",\"label\":\"").append(cname).append("\"}");
-    }
-} catch (Exception ex) {}
-customerJson.append("]");
-
 String msg  = request.getParameter("msg");
 String type = request.getParameter("type");
 %>
@@ -69,6 +44,7 @@ String type = request.getParameter("type");
         .badge-billed   { background: #d1e7dd; color: #0a3622; border: 1px solid #a3cfbb; }
         .tbl-amt { text-align: right; min-width: 64px; }
         .filter-card .form-control, .filter-card .form-select { font-size: 13px; }
+        .ui-autocomplete { z-index: 99999 !important; }
     </style>
 </head>
 <body>
@@ -247,10 +223,10 @@ if (orders.isEmpty()) {
                 int tbBillId = 0;
                 try { tbBillId = bill.getTransportBillIdByLrId(Integer.parseInt(id.toString())); } catch (Exception _ex) {}
                 if (tbBillId > 0) { %>
-                            <a href="<%=contextPath%>/logistics/transportBill/print.jsp?billId=<%=tbBillId%>" target="_blank"
-                               class="btn btn-sm btn-success">
-                                <i class="fas fa-print"></i> Print
-                            </a>
+                            <button class="btn btn-sm btn-info text-white"
+                                onclick="showBillModal('<%=id%>','<%=row.get(4).toString().replace("'","\\'")%>',<%=tbBillId%>)">
+                                <i class="fas fa-file-invoice"></i> View Bill
+                            </button>
 <%              } %><%  } %>
                         </td>
                     </tr>
@@ -341,10 +317,42 @@ if (orders.isEmpty()) {
         </div>
       </div>
       <div class="modal-footer">
+        <button type="button" class="btn btn-danger me-auto" id="btnCancelOrder" onclick="cancelOrderFromModal()">
+          <i class="fas fa-ban me-1"></i>Cancel Order
+        </button>
         <button type="button" class="bb bb-outline" data-bs-dismiss="modal">
-          <i class="fas fa-times me-1"></i>Cancel
+          <i class="fas fa-times me-1"></i>Close
         </button>
         <button type="button" class="bb bb-primary" onclick="saveEdit()">
+          <i class="fas fa-save me-1"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bill View/Edit Modal -->
+<div class="modal fade" id="billModal" tabindex="-1" aria-labelledby="billModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="billModalLabel"><i class="fas fa-file-invoice me-2"></i>Transport Bill — LR <span id="bm_lrNo"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="billModalBody">
+        <div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger me-auto" id="bmBtnCancelBill" onclick="cancelBillFromModal()">
+          <i class="fas fa-ban me-1"></i>Cancel Bill
+        </button>
+        <a id="bmBtnPrint" href="#" target="_blank" class="bb bb-secondary">
+          <i class="fas fa-print me-1"></i>Print
+        </a>
+        <button type="button" class="bb bb-outline" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Close
+        </button>
+        <button type="button" class="bb bb-primary" onclick="saveBillEdit()">
           <i class="fas fa-save me-1"></i>Save Changes
         </button>
       </div>
@@ -364,8 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-var supplierData = <%=supplierJson%>;
-var customerData = <%=customerJson%>;
 var contextPath  = '<%=contextPath%>';
 
 $(function() {
@@ -379,43 +385,76 @@ $(function() {
     history.replaceState(null, '', window.location.pathname + '?fromDate=<%=fromDate%>&toDate=<%=toDate%>');
     <% } %>
 
-    // Supplier autocomplete in modal
+    // Supplier autocomplete in modal (AJAX)
     $('#m_supplierName').autocomplete({
-        source: supplierData,
-        minLength: 0,
+        source: function(request, response) {
+            $.getJSON(contextPath + '/logistics/order/getSuppliers.jsp', { term: request.term }, response);
+        },
+        minLength: 1,
         select: function(event, ui) {
             $('#m_supplierId').val(ui.item.id);
             $(this).val(ui.item.label);
             $('#m_supplierError').hide();
             return false;
         }
-    }).on('focus', function() {
-        if (!$(this).val()) $(this).autocomplete('search', '');
     }).on('input', function() {
         $('#m_supplierId').val('');
     });
 
-    // Customer autocomplete in modal
+    // Customer autocomplete in modal (AJAX)
     $('#m_customerName').autocomplete({
-        source: customerData,
-        minLength: 0,
+        source: function(request, response) {
+            $.getJSON(contextPath + '/logistics/order/getCustomers.jsp', { term: request.term }, response);
+        },
+        minLength: 1,
         select: function(event, ui) {
             $('#m_customerId').val(ui.item.id);
             $(this).val(ui.item.label);
             $('#m_customerError').hide();
             return false;
         }
-    }).on('focus', function() {
-        if (!$(this).val()) $(this).autocomplete('search', '');
     }).on('input', function() {
         $('#m_customerId').val('');
     });
 
     // Amount recalc
     $('.m-amt').on('input', calcModalProfit).on('focus', function() { this.select(); });
+
+    // Re-attach autocomplete when modal opens (ensures proper context)
+    $('#editModal').on('shown.bs.modal', function() {
+        if (!$('#m_supplierName').data('ui-autocomplete')) {
+            $('#m_supplierName').autocomplete({
+                source: function(request, response) {
+                    $.getJSON(contextPath + '/logistics/order/getSuppliers.jsp', { term: request.term }, response);
+                },
+                minLength: 1,
+                select: function(event, ui) {
+                    $('#m_supplierId').val(ui.item.id);
+                    $(this).val(ui.item.label);
+                    $('#m_supplierError').hide();
+                    return false;
+                }
+            }).on('input', function() { $('#m_supplierId').val(''); });
+        }
+        if (!$('#m_customerName').data('ui-autocomplete')) {
+            $('#m_customerName').autocomplete({
+                source: function(request, response) {
+                    $.getJSON(contextPath + '/logistics/order/getCustomers.jsp', { term: request.term }, response);
+                },
+                minLength: 1,
+                select: function(event, ui) {
+                    $('#m_customerId').val(ui.item.id);
+                    $(this).val(ui.item.label);
+                    $('#m_customerError').hide();
+                    return false;
+                }
+            }).on('input', function() { $('#m_customerId').val(''); });
+        }
+    });
 });
 
 function showEdit(id, suppId, suppName, lrDate, lrNo, custId, custName, dest, dpf, lh, load, ul, lc, hoting) {
+    $('#btnCancelOrder').data('id', id).data('lrno', lrNo);
     $('#m_id').val(id);
     $('#m_supplierId').val(suppId);
     $('#m_supplierName').val(suppName);
@@ -532,6 +571,210 @@ $(function() {
     $('#fltCustomer, #fltSupplier, #fltDest, #fltLrNo').on('input', applyFilters);
     $('#fltStatus').on('change', applyFilters);
 });
+
+function cancelOrderFromModal() {
+    var id   = $('#btnCancelOrder').data('id');
+    var lrNo = $('#btnCancelOrder').data('lrno');
+    bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+    cancelOrder(id, lrNo);
+}
+
+// ── Bill modal ──────────────────────────────────────────────────
+var _bm_billId = 0;
+var _bm_lrId   = 0;
+
+function showBillModal(lrId, lrNo, billId) {
+    _bm_billId = billId;
+    _bm_lrId   = lrId;
+    $('#bm_lrNo').text(lrNo);
+    $('#bmBtnCancelBill').data('billid', billId);
+    $('#bmBtnPrint').attr('href', contextPath + '/logistics/transportBill/print.jsp?billId=' + billId);
+    $('#billModalBody').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
+    var modal = new bootstrap.Modal(document.getElementById('billModal'));
+    modal.show();
+    $.getJSON(contextPath + '/logistics/orderList/getLrBillDetails.jsp', { lrId: lrId }, function(data) {
+        if (data.error) {
+            $('#billModalBody').html('<div class="alert alert-danger">' + data.error + '</div>');
+            return;
+        }
+        var dpf = parseFloat(data.dpf) || 0;
+        var html = '';
+        html += '<div class="row mb-3">';
+        html += '  <div class="col-md-3"><label class="form-label fw-semibold">Invoice No</label>';
+        html += '  <input type="text" class="form-control fg-inp" readonly value="' + esc(data.invoiceNo) + '"></div>';
+        html += '  <div class="col-md-3"><label class="form-label fw-semibold">LR Date</label>';
+        html += '  <input type="date" id="bm_lrDate" class="form-control fg-inp" value="' + esc(data.lrDate) + '"></div>';
+        html += '  <div class="col-md-3"><label class="form-label fw-semibold">PO No</label>';
+        html += '  <input type="text" id="bm_poNo" class="form-control fg-inp" maxlength="100" value="' + esc(data.poNo) + '"></div>';
+        html += '  <div class="col-md-3"><label class="form-label fw-semibold">SAC Code</label>';
+        html += '  <input type="text" id="bm_sacCode" class="form-control fg-inp" maxlength="50" value="' + esc(data.sacCode) + '"></div>';
+        html += '</div>';
+        html += '<div class="mb-3">';
+        html += '  <label class="form-label fw-semibold">Notes</label>';
+        html += '  <textarea id="bm_notes" class="form-control fg-inp" rows="2" maxlength="500" placeholder="Notes...">' + esc(data.notes) + '</textarea>';
+        html += '</div>';
+        html += '<div class="d-flex justify-content-between align-items-center mb-2">';
+        html += '  <h6 class="fw-bold mb-0"><i class="fa-solid fa-list me-1"></i>Particulars</h6>';
+        html += '  <div><span class="me-3 text-muted">DPF Limit: <strong class="text-success">&#8377;' + dpf.toFixed(2) + '</strong></span>';
+        html += '  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="bmAddRow()"><i class="fas fa-plus me-1"></i>Add Row</button></div>';
+        html += '</div>';
+        html += '<div class="table-responsive"><table class="table table-bordered table-sm mb-1" id="bmPartTable">';
+        html += '<thead class="table-dark"><tr><th>Particular</th><th style="width:100px">Qty</th><th style="width:130px">Rate/Wt</th><th style="width:120px">Amount (&#8377;)</th><th style="width:40px"></th></tr></thead>';
+        html += '<tbody id="bmPartBody">';
+        if (data.details && data.details.length > 0) {
+            for (var i = 0; i < data.details.length; i++) {
+                html += bmRow(data.details[i].particular, data.details[i].qty, data.details[i].rateWt, data.details[i].amount);
+            }
+        } else {
+            html += bmRow('','','',0);
+        }
+        html += '</tbody>';
+        html += '<tfoot><tr><td colspan="3" class="text-end fw-bold">LR Total</td>';
+        html += '<td><input type="text" id="bm_lrTotal" class="form-control form-control-sm fw-bold" readonly></td><td></td></tr></tfoot>';
+        html += '</table></div>';
+        html += '<div id="bm_dpfWarning" class="alert alert-warning py-1 mt-1" style="display:none;"><i class="fas fa-exclamation-triangle me-1"></i>LR Total must equal DPF limit of &#8377;' + dpf.toFixed(2) + '!</div>';
+        $('#billModalBody').html(html);
+        // Store dpf
+        $('#billModalBody').data('dpf', dpf);
+        bmCalcTotal();
+        $('#bmPartBody').on('input', 'input.bm-amt', bmCalcTotal);
+    }).fail(function() {
+        $('#billModalBody').html('<div class="alert alert-danger">Failed to load bill details.</div>');
+    });
+}
+
+function esc(s) {
+    if (!s) return '';
+    return $('<div>').text(s).html();
+}
+
+function bmRow(particular, qty, rateWt, amount) {
+    return '<tr>'
+        + '<td><input type="text" class="form-control form-control-sm" value="' + esc(particular) + '"></td>'
+        + '<td><input type="text" class="form-control form-control-sm" value="' + esc(qty) + '"></td>'
+        + '<td><input type="text" class="form-control form-control-sm" value="' + esc(rateWt) + '"></td>'
+        + '<td><input type="number" step="0.01" min="0" class="form-control form-control-sm bm-amt" value="' + (parseFloat(amount)||0).toFixed(2) + '"></td>'
+        + '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="$(this).closest(\'tr\').remove();bmCalcTotal();"><i class="fas fa-times"></i></button></td>'
+        + '</tr>';
+}
+
+function bmAddRow() {
+    $('#bmPartBody').append(bmRow('','','',0));
+}
+
+function bmCalcTotal() {
+    var total = 0;
+    $('#bmPartBody input.bm-amt').each(function() { total += parseFloat($(this).val()) || 0; });
+    $('#bm_lrTotal').val(total.toFixed(2));
+    var dpf = parseFloat($('#billModalBody').data('dpf')) || 0;
+    if (dpf > 0 && Math.abs(total - dpf) > 0.001) {
+        $('#bm_dpfWarning').show();
+        $('#bm_lrTotal').css('color', '#dc3545');
+    } else {
+        $('#bm_dpfWarning').hide();
+        $('#bm_lrTotal').css('color', '#198754');
+    }
+}
+
+function saveBillEdit() {
+    var poNo    = $('#bm_poNo').val().trim();
+    var sacCode = $('#bm_sacCode').val().trim();
+    var notes   = $('#bm_notes').val().trim();
+    var lrDate  = $('#bm_lrDate').val();
+    var lrTotal = parseFloat($('#bm_lrTotal').val()) || 0;
+    var dpf     = parseFloat($('#billModalBody').data('dpf')) || 0;
+
+    if (!lrDate) {
+        Swal.fire({ icon: 'warning', title: 'Validation', text: 'Please select LR Date.' });
+        return;
+    }
+    if (dpf > 0 && Math.abs(lrTotal - dpf) > 0.001) {
+        Swal.fire({ icon: 'warning', title: 'Amount Mismatch', text: 'LR Total (\u20b9' + lrTotal.toFixed(2) + ') must equal the DPF amount (\u20b9' + dpf.toFixed(2) + ').' });
+        return;
+    }
+
+    var parts = [];
+    $('#bmPartBody tr').each(function() {
+        var inputs = $(this).find('input');
+        parts.push({
+            particular: $(inputs[0]).val(),
+            qty:        $(inputs[1]).val(),
+            rateWt:     $(inputs[2]).val(),
+            amount:     parseFloat($(inputs[3]).val()) || 0
+        });
+    });
+
+    $.ajax({
+        url: contextPath + '/logistics/orderList/updateBillLr.jsp',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ billId: _bm_billId, lrId: _bm_lrId, poNo: poNo, sacCode: sacCode, notes: notes, lrDate: lrDate, lrTotal: lrTotal, particulars: parts }),
+        success: function(res) {
+            if (res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('billModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Updated', text: 'Bill updated successfully!', timer: 1500, showConfirmButton: false })
+                    .then(function() { location.reload(); });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: res.msg || 'Update failed.' });
+            }
+        },
+        error: function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Server error.' }); }
+    });
+}
+
+function cancelBillFromModal() {
+    var billId = $('#bmBtnCancelBill').data('billid');
+    bootstrap.Modal.getInstance(document.getElementById('billModal')).hide();
+    Swal.fire({
+        icon: 'warning',
+        title: 'Cancel Transport Bill?',
+        html: 'This will cancel the bill and mark all its LRs as <strong>Unbilled</strong> again.',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, Cancel Bill',
+        cancelButtonText: 'No'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            $.post(contextPath + '/logistics/orderList/cancelBill.jsp', { billId: billId }, function(res) {
+                res = $.trim(res);
+                if (res === 'OK') {
+                    Swal.fire({ icon: 'success', title: 'Cancelled', text: 'Transport bill cancelled!', timer: 1500, showConfirmButton: false })
+                        .then(function() { location.reload(); });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: res || 'Failed to cancel bill.' });
+                }
+            }).fail(function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Server error.' }); });
+        } else {
+            bootstrap.Modal.getInstance(document.getElementById('billModal')) && bootstrap.Modal.getInstance(document.getElementById('billModal')).show();
+        }
+    });
+}
+
+function cancelOrder(id, lrNo) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Cancel Order?',
+        html: 'Are you sure you want to cancel LR No <strong>' + lrNo + '</strong>?<br>This cannot be undone.',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, Cancel Order',
+        cancelButtonText: 'No'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            $.post(contextPath + '/logistics/orderList/cancelOrder.jsp', { id: id }, function(res) {
+                res = $.trim(res);
+                if (res === 'OK') {
+                    Swal.fire({ icon: 'success', title: 'Cancelled', text: 'Order cancelled successfully!', timer: 1500, showConfirmButton: false })
+                        .then(function() { location.reload(); });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: res || 'Failed to cancel order.' });
+                }
+            }).fail(function() {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Server error. Please try again.' });
+            });
+        }
+    });
+}
 </script>
 </body>
 </html>

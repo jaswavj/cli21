@@ -268,5 +268,14 @@ String type = request.getParameter("type");
     e.preventDefault();
   });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar && !sidebar.classList.contains('hidden')) {
+        sidebar.classList.add('hidden');
+        document.body.classList.add('sidebar-hidden');
+    }
+});
+</script>
 </body>
 </html>

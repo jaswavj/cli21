@@ -6786,7 +6786,7 @@ public int saveLogisticsOrder(int supplierId, String lrDate, String lrNo,
         con = util.DBConnectionManager.getConnectionFromPool();
         con.setAutoCommit(false);
 
-        String sql = "INSERT INTO logistics "
+        String sql = "INSERT INTO transport_bill_order "
                    + "(supplier_id, lr_date, lr_no, customer_id, destination, "
                    + " dpf, lh, load_amt, ul, hoting, lc, "
                    + " is_billed, is_active, entry_user, entry_date_time) "
@@ -6831,7 +6831,7 @@ public boolean checkLrNoExists(String lrNo) throws Exception {
     try {
         con = util.DBConnectionManager.getConnectionFromPool();
         ps = con.prepareStatement(
-            "SELECT COUNT(*) FROM logistics WHERE lr_no = ? AND is_active = 1");
+            "SELECT COUNT(*) FROM transport_bill_order WHERE lr_no = ? AND is_active = 1");
         ps.setString(1, lrNo);
         rs = ps.executeQuery();
         if (rs.next()) {
@@ -6860,7 +6860,7 @@ public Vector getLogisticsOrderList(String fromDate, String toDate) throws Excep
         String sql = "SELECT l.id, l.supplier_id, IFNULL(s.name,'') AS supplier_name, "
                    + " l.lr_date, l.lr_no, l.customer_id, IFNULL(c.name,'') AS customer_name, "
                    + " l.destination, l.dpf, l.lh, l.load_amt, l.ul, l.hoting, l.lc, l.is_billed "
-                   + "FROM logistics l "
+                   + "FROM transport_bill_order l "
                    + "LEFT JOIN prod_supplier s ON s.id = l.supplier_id "
                    + "LEFT JOIN customers c ON c.id = l.customer_id "
                    + "WHERE l.is_active = 1 AND l.lr_date BETWEEN ? AND ? "
@@ -6908,7 +6908,7 @@ public int updateLogisticsOrder(int id, int supplierId, String lrDate, String lr
     try {
         con = util.DBConnectionManager.getConnectionFromPool();
         con.setAutoCommit(true);
-        String sql = "UPDATE logistics SET "
+        String sql = "UPDATE transport_bill_order SET "
                    + " supplier_id=?, lr_date=?, lr_no=?, customer_id=?, destination=?, "
                    + " dpf=?, lh=?, load_amt=?, ul=?, hoting=?, lc=? "
                    + "WHERE id=? AND is_billed=0 AND is_active=1";
@@ -6933,6 +6933,81 @@ public int updateLogisticsOrder(int id, int supplierId, String lrDate, String lr
 }
 
 /**
+ * Cancels an unbilled logistics order by setting is_active=0 and recording cancel_uid.
+ * Only works if the order is unbilled (is_billed=0) and currently active.
+ *
+ * @param id        logistics order id
+ * @param cancelUid user id performing the cancellation
+ * @return rows affected (1 = success, 0 = not found / already billed)
+ */
+public int cancelLogisticsOrder(int id, int cancelUid) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(true);
+        ps = con.prepareStatement(
+            "UPDATE transport_bill_order SET is_active = 0, cancel_uid = ?, cancel_date_time = NOW() " +
+            "WHERE id = ? AND is_billed = 0 AND is_active = 1");
+        ps.setInt(1, cancelUid);
+        ps.setInt(2, id);
+        return ps.executeUpdate();
+    } finally {
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Returns cancelled logistics orders for admin report.
+ * Each row: [id, lr_no, lr_date, supplier_name, customer_name, destination, dpf, cancel_uid_name, cancel_date_time]
+ */
+public Vector getCancelledOrderReport(String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        String sql = "SELECT t.id, t.lr_no, t.lr_date, "
+                   + " IFNULL(s.name,'') AS supplier_name, "
+                   + " IFNULL(c.name,'') AS customer_name, "
+                   + " t.destination, t.dpf, "
+                   + " IFNULL(u.user_name,'') AS cancel_by, "
+                   + " t.cancel_date_time "
+                   + "FROM transport_bill_order t "
+                   + "LEFT JOIN prod_supplier s ON s.id = t.supplier_id "
+                   + "LEFT JOIN customers c ON c.id = t.customer_id "
+                   + "LEFT JOIN users u ON u.id = t.cancel_uid "
+                   + "WHERE t.is_active = 0 AND t.cancel_uid IS NOT NULL "
+                   + "  AND DATE(t.cancel_date_time) BETWEEN ? AND ? "
+                   + "ORDER BY t.cancel_date_time DESC";
+        ps = con.prepareStatement(sql);
+        ps.setString(1, fromDate);
+        ps.setString(2, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString("id"));
+            row.addElement(rs.getString("lr_no"));
+            row.addElement(rs.getString("lr_date"));
+            row.addElement(rs.getString("supplier_name"));
+            row.addElement(rs.getString("customer_name"));
+            row.addElement(rs.getString("destination"));
+            row.addElement(rs.getString("dpf"));
+            row.addElement(rs.getString("cancel_by"));
+            row.addElement(rs.getString("cancel_date_time") != null ? rs.getString("cancel_date_time") : "");
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
  * Returns all unbilled (is_billed=0) active logistics orders.
  * Each row: [id, lr_no, lr_date, customer_name, destination, dpf]
  */
@@ -6945,7 +7020,7 @@ public Vector getUnbilledLRList() throws Exception {
         con = util.DBConnectionManager.getConnectionFromPool();
         String sql = "SELECT l.id, l.lr_no, l.lr_date, "
                    + " IFNULL(c.name,'') AS customer_name, l.destination, l.dpf, l.customer_id "
-                   + "FROM logistics l "
+                   + "FROM transport_bill_order l "
                    + "LEFT JOIN customers c ON c.id = l.customer_id "
                    + "WHERE l.is_active = 1 AND l.is_billed = 0 "
                    + "ORDER BY l.lr_date ASC, l.id ASC";
@@ -7090,7 +7165,7 @@ public String saveTransportBill(
             partOffset += count;
 
             // Mark LR as billed
-            ps = con.prepareStatement("UPDATE logistics SET is_billed=1 WHERE id=?");
+            ps = con.prepareStatement("UPDATE transport_bill_order SET is_billed=1 WHERE id=?");
             ps.setInt(1, lrIds[i]);
             ps.executeUpdate();
             ps.close();
@@ -7164,7 +7239,7 @@ public Vector getTransportBillForPrint(int billId) throws Exception {
             "SELECT tlr.id, tlr.logistics_id, l.lr_no, DATE_FORMAT(l.lr_date,'%d/%m/%Y'), "
             + " IFNULL(tlr.notes,''), tlr.lr_total "
             + "FROM transport_bill_lr tlr "
-            + "JOIN logistics l ON l.id = tlr.logistics_id "
+            + "JOIN transport_bill_order l ON l.id = tlr.logistics_id "
             + "WHERE tlr.bill_id = ? ORDER BY tlr.id ASC");
         ps.setInt(1, billId);
         rs = ps.executeQuery();
@@ -7227,6 +7302,538 @@ public int getTransportBillIdByLrId(int lrId) throws Exception {
         rs = ps.executeQuery();
         if (rs.next()) return rs.getInt(1);
         return 0;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportBillEditData ──────────────────────────────────
+// Returns bill header + particulars for a given LR (logistics_id).
+// result[0] = header Vector: [billId, invoiceNo, poNo, sacCode, lrNo, lrDate, lrTotal, dpf, notes]
+// result[1] = Vector of detail rows: [id, particular, qty, rate_wt, amount]
+public Vector getTransportBillEditData(int lrId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector result = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+
+        // Header
+        ps = con.prepareStatement(
+            "SELECT tb.id, tb.invoice_no, IFNULL(tb.po_no,''), IFNULL(tb.sac_code,''), "
+          + " tbo.lr_no, tbo.lr_date, tlr.lr_total, tbo.dpf, IFNULL(tlr.notes,'') "
+          + "FROM transport_bill_lr tlr "
+          + "JOIN transport_bill tb  ON tb.id  = tlr.bill_id "
+          + "JOIN transport_bill_order tbo ON tbo.id = tlr.logistics_id "
+          + "WHERE tlr.logistics_id = ? LIMIT 1");
+        ps.setInt(1, lrId);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            Vector hdr = new Vector();
+            for (int i = 1; i <= 9; i++) hdr.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            result.addElement(hdr);
+        } else {
+            return result; // empty = not found
+        }
+        rs.close(); ps.close();
+
+        // Particulars
+        ps = con.prepareStatement(
+            "SELECT tbd.id, tbd.particular, IFNULL(tbd.qty,''), IFNULL(tbd.rate_wt,''), tbd.amount "
+          + "FROM transport_bill_details tbd "
+          + "JOIN transport_bill_lr tlr ON tlr.id = tbd.bill_lr_id "
+          + "WHERE tlr.logistics_id = ? ORDER BY tbd.sort_order");
+        ps.setInt(1, lrId);
+        rs = ps.executeQuery();
+        Vector details = new Vector();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 5; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            details.addElement(row);
+        }
+        result.addElement(details);
+        return result;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── updateTransportBillLR ─────────────────────────────────────
+// Updates po_no, sac_code on the bill header and replaces particulars for one LR.
+public int updateTransportBillLR(int billId, int lrId, String poNo, String sacCode,
+        String lrDate, double lrTotal, String notes, String[] particulars, String[] quantities,
+        String[] rateWts, double[] amounts) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+
+        // Update po_no / sac_code on bill header
+        ps = con.prepareStatement(
+            "UPDATE transport_bill SET po_no=?, sac_code=? WHERE id=? AND is_cancelled=0");
+        ps.setString(1, poNo != null && !poNo.isEmpty() ? poNo : null);
+        ps.setString(2, sacCode != null && !sacCode.isEmpty() ? sacCode : null);
+        ps.setInt(3, billId);
+        ps.executeUpdate();
+        ps.close();
+
+        // Update lr_date on transport_bill_order
+        if (lrDate != null && !lrDate.isEmpty()) {
+            ps = con.prepareStatement(
+                "UPDATE transport_bill_order SET lr_date=? WHERE id=?");
+            ps.setString(1, lrDate);
+            ps.setInt(2, lrId);
+            ps.executeUpdate();
+            ps.close();
+        }
+
+        // Update lr_total and notes in transport_bill_lr
+        ps = con.prepareStatement(
+            "UPDATE transport_bill_lr SET lr_total=?, notes=? WHERE bill_id=? AND logistics_id=?");
+        ps.setDouble(1, lrTotal);
+        ps.setString(2, notes != null && !notes.isEmpty() ? notes : null);
+        ps.setInt(3, billId);
+        ps.setInt(4, lrId);
+        ps.executeUpdate();
+        ps.close();
+
+        // Recalculate grand_total
+        ps = con.prepareStatement(
+            "UPDATE transport_bill SET grand_total = "
+          + "(SELECT IFNULL(SUM(lr_total),0) FROM transport_bill_lr WHERE bill_id=?) WHERE id=?");
+        ps.setInt(1, billId);
+        ps.setInt(2, billId);
+        ps.executeUpdate();
+        ps.close();
+
+        // Get bill_lr_id
+        ps = con.prepareStatement(
+            "SELECT id FROM transport_bill_lr WHERE bill_id=? AND logistics_id=? LIMIT 1");
+        ps.setInt(1, billId);
+        ps.setInt(2, lrId);
+        rs = ps.executeQuery();
+        int billLrId = 0;
+        if (rs.next()) billLrId = rs.getInt(1);
+        rs.close(); ps.close();
+        if (billLrId == 0) { con.rollback(); return 0; }
+
+        // Delete existing details for this LR
+        ps = con.prepareStatement(
+            "DELETE FROM transport_bill_details WHERE bill_lr_id=?");
+        ps.setInt(1, billLrId);
+        ps.executeUpdate();
+        ps.close();
+
+        // Re-insert particulars
+        ps = con.prepareStatement(
+            "INSERT INTO transport_bill_details "
+          + "(bill_id,bill_lr_id,logistics_id,particular,qty,rate_wt,amount,sort_order) "
+          + "VALUES (?,?,?,?,?,?,?,?)");
+        for (int j = 0; j < particulars.length; j++) {
+            ps.setInt(1, billId);
+            ps.setInt(2, billLrId);
+            ps.setInt(3, lrId);
+            ps.setString(4, particulars[j] != null ? particulars[j] : "");
+            ps.setString(5, quantities[j]);
+            ps.setString(6, rateWts[j]);
+            ps.setDouble(7, amounts[j]);
+            ps.setInt(8, j + 1);
+            ps.addBatch();
+        }
+        ps.executeBatch();
+        ps.close();
+
+        con.commit();
+        return 1;
+    } catch (Exception e) {
+        if (con != null) try { con.rollback(); } catch (Exception ignored) {}
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── cancelTransportBill ───────────────────────────────────────
+// Sets transport_bill.is_cancelled=1 and reverts transport_bill_order.is_billed=0
+// for all LRs in that bill, so they can be billed again.
+public int cancelTransportBill(int billId, int cancelUid) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+
+        // Cancel the bill
+        ps = con.prepareStatement(
+            "UPDATE transport_bill SET is_cancelled=1, cancel_uid=?, cancel_date_time=NOW() "
+          + "WHERE id=? AND is_cancelled=0");
+        ps.setInt(1, cancelUid);
+        ps.setInt(2, billId);
+        int rows = ps.executeUpdate();
+        ps.close();
+        if (rows == 0) { con.rollback(); return 0; }
+
+        // Revert is_billed=0 on all LRs in this bill
+        ps = con.prepareStatement(
+            "UPDATE transport_bill_order SET is_billed=0 "
+          + "WHERE id IN (SELECT logistics_id FROM transport_bill_lr WHERE bill_id=?)");
+        ps.setInt(1, billId);
+        ps.executeUpdate();
+        ps.close();
+
+        con.commit();
+        return 1;
+    } catch (Exception e) {
+        if (con != null) try { con.rollback(); } catch (Exception ignored) {}
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getCancelledBillReport ────────────────────────────────────
+public Vector getCancelledBillReport(String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        String sql = "SELECT tb.id, tb.invoice_no, DATE_FORMAT(tb.bill_date,'%d-%m-%Y'), "
+                   + " IFNULL(c.name,''), tb.grand_total, "
+                   + " IFNULL(u.user_name,''), "
+                   + " DATE_FORMAT(tb.cancel_date_time,'%d-%m-%Y %H:%i') "
+                   + "FROM transport_bill tb "
+                   + "LEFT JOIN customers c ON c.id = tb.customer_id "
+                   + "LEFT JOIN users u ON u.id = tb.cancel_uid "
+                   + "WHERE tb.is_cancelled=1 "
+                   + "  AND DATE(tb.cancel_date_time) BETWEEN ? AND ? "
+                   + "ORDER BY tb.cancel_date_time DESC";
+        ps = con.prepareStatement(sql);
+        ps.setString(1, fromDate);
+        ps.setString(2, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 7; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportBillIdByInvoiceNo ────────────────────────────
+public int getTransportBillIdByInvoiceNo(String invoiceNo) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT id FROM transport_bill WHERE invoice_no=? AND is_cancelled=0 LIMIT 1");
+        ps.setString(1, invoiceNo);
+        rs = ps.executeQuery();
+        if (rs.next()) return rs.getInt(1);
+        return 0;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportPendingBalances ───────────────────────────────
+// Returns all transport bills with balance > 0, not cancelled.
+// Columns: [0]=billId [1]=invoiceNo [2]=billDate [3]=customerName
+//          [4]=grandTotal [5]=paidAmount [6]=balance [7]=paymentMode
+public Vector getTransportPendingBalances() throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT tb.id, tb.invoice_no, tb.bill_date, c.name, "
+          + "tb.grand_total, tb.paid_amount, tb.balance, IFNULL(tb.payment_mode,'') "
+          + "FROM transport_bill tb "
+          + "JOIN customers c ON c.id = tb.customer_id "
+          + "WHERE tb.balance > 0 AND tb.is_cancelled = 0 "
+          + "ORDER BY tb.bill_date DESC, tb.id DESC");
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 8; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportBillPaymentHistory ───────────────────────────
+// Returns all payment rows for a bill + bill header summary.
+// result[0] = header Vector: [billId, invoiceNo, billDate, customerName, grandTotal, paidAmount, balance]
+// result[1] = Vector of payment rows: [id, paymentType, paymentMode, paidAmount, entryUser, entryDateTime, userName]
+public Vector getTransportBillPaymentHistory(int billId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector result = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        // Header
+        ps = con.prepareStatement(
+            "SELECT tb.id, tb.invoice_no, tb.bill_date, c.name, "
+          + "tb.grand_total, tb.paid_amount, tb.balance "
+          + "FROM transport_bill tb "
+          + "JOIN customers c ON c.id = tb.customer_id "
+          + "WHERE tb.id = ?");
+        ps.setInt(1, billId);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            Vector hdr = new Vector();
+            for (int i = 1; i <= 7; i++) hdr.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            result.addElement(hdr);
+        } else {
+            return result;
+        }
+        rs.close(); ps.close();
+        // Payments
+        ps = con.prepareStatement(
+            "SELECT tbp.id, tbp.payment_type, IFNULL(tbp.payment_mode,''), tbp.paid_amount, "
+          + "IFNULL(u.user_name,''), IFNULL(tbp.entry_date_time, tbp.id) "
+          + "FROM transport_bill_payment tbp "
+          + "LEFT JOIN users u ON u.id = tbp.entry_user "
+          + "WHERE tbp.bill_id = ? "
+          + "ORDER BY tbp.id ASC");
+        ps.setInt(1, billId);
+        rs = ps.executeQuery();
+        Vector payments = new Vector();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 6; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            payments.addElement(row);
+        }
+        result.addElement(payments);
+        return result;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── saveTransportBalancePayment ───────────────────────────────
+// Saves a balance collection payment; updates paid_amount and balance on transport_bill.
+// Returns "OK" or throws on error.
+public String saveTransportBalancePayment(int billId, double payNow, int paymentType, int paymentMode, int entryUser)
+        throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+        // Get current balance
+        ps = con.prepareStatement(
+            "SELECT balance FROM transport_bill WHERE id=? AND is_cancelled=0 FOR UPDATE");
+        ps.setInt(1, billId);
+        rs = ps.executeQuery();
+        if (!rs.next()) { con.rollback(); return "Bill not found or cancelled."; }
+        double currentBalance = rs.getDouble(1);
+        rs.close(); ps.close();
+        if (payNow <= 0) { con.rollback(); return "Amount must be greater than zero."; }
+        if (payNow > currentBalance + 0.001) { con.rollback(); return "Amount exceeds balance of " + String.format("%.2f", currentBalance); }
+        double newBalance  = currentBalance - payNow;
+        if (newBalance < 0) newBalance = 0;
+        // Update bill
+        ps = con.prepareStatement(
+            "UPDATE transport_bill SET paid_amount = paid_amount + ?, balance = ? WHERE id = ?");
+        ps.setDouble(1, payNow);
+        ps.setDouble(2, newBalance);
+        ps.setInt(3, billId);
+        ps.executeUpdate();
+        ps.close();
+        // Insert payment record
+        ps = con.prepareStatement(
+            "INSERT INTO transport_bill_payment (bill_id, payment_type, payment_mode, paid_amount, entry_user) "
+          + "VALUES (?, ?, ?, ?, ?)");
+        ps.setInt(1, billId);
+        ps.setInt(2, paymentType);
+        ps.setInt(3, paymentMode);
+        ps.setDouble(4, payNow);
+        ps.setInt(5, entryUser);
+        ps.executeUpdate();
+        ps.close();
+        con.commit();
+        return "OK";
+    } catch (Exception e) {
+        if (con != null) try { con.rollback(); } catch (Exception ignored) {}
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportBalanceCollectionReport ──────────────────────
+// Returns balance collection payments within a date range.
+// Columns: [0]=payId [1]=invoiceNo [2]=billDate [3]=customerName
+//          [4]=paidAmount [5]=paymentType [6]=paymentMode [7]=collectedBy [8]=collectedOn
+public Vector getTransportBalanceCollectionReport(String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT tbp.id, tb.invoice_no, tb.bill_date, c.name, "
+          + "tbp.paid_amount, IFNULL(tbp.payment_type,1), IFNULL(tbp.payment_mode,0), IFNULL(u.user_name,''), "
+          + "IFNULL(tbp.entry_date_time,'') "
+          + "FROM transport_bill_payment tbp "
+          + "JOIN transport_bill tb ON tb.id = tbp.bill_id "
+          + "JOIN customers c ON c.id = tb.customer_id "
+          + "LEFT JOIN users u ON u.id = tbp.entry_user "
+          + "WHERE DATE(IFNULL(tbp.entry_date_time, CURDATE())) BETWEEN ? AND ? "
+          + "ORDER BY tbp.id DESC");
+        ps.setString(1, fromDate);
+        ps.setString(2, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 9; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getTransportBillsByCustomer ───────────────────────────────
+// Returns all transport bills for a customer (for customer-wise balance report).
+// Columns: [0]=billId [1]=invoiceNo [2]=billDate [3]=grandTotal [4]=paidAmount [5]=balance
+public Vector getTransportBillsByCustomer(int customerId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT tb.id, tb.invoice_no, tb.bill_date, tb.grand_total, tb.paid_amount, tb.balance "
+          + "FROM transport_bill tb "
+          + "WHERE tb.customer_id = ? AND tb.is_cancelled = 0 "
+          + "ORDER BY tb.bill_date DESC, tb.id DESC");
+        ps.setInt(1, customerId);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 6; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getLogisticsProfitByDate ──────────────────────────────────
+// Date-wise profit report for billed LR orders.
+// Columns: [0]=lr_date [1]=lrCount [2]=totalDpf [3]=totalLh [4]=totalLoad
+//          [5]=totalUl [6]=totalLc [7]=totalHoting [8]=totalCosting [9]=totalProfit
+public Vector getLogisticsProfitByDate(String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT l.lr_date, COUNT(l.id), "
+          + "SUM(l.dpf), SUM(l.lh), SUM(l.load_amt), SUM(l.ul), SUM(l.lc), SUM(l.hoting), "
+          + "SUM(l.lh + l.load_amt + l.ul + l.lc + l.hoting), "
+          + "SUM(l.dpf - (l.lh + l.load_amt + l.ul + l.lc + l.hoting)) "
+          + "FROM transport_bill_order l "
+          + "WHERE l.is_billed = 1 AND l.is_active = 1 AND l.lr_date BETWEEN ? AND ? "
+          + "GROUP BY l.lr_date ORDER BY l.lr_date ASC");
+        ps.setString(1, fromDate);
+        ps.setString(2, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 10; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "0");
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
+        if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
+        if (con != null) try { con.close(); } catch (Exception ignored) {}
+    }
+}
+
+// ── getLogisticsProfitByBill ──────────────────────────────────
+// Bill-wise profit report for billed LR orders.
+// Columns: [0]=billId [1]=invoiceNo [2]=billDate [3]=customerName
+//          [4]=lrCount [5]=totalDpf [6]=totalLh [7]=totalLoad
+//          [8]=totalUl [9]=totalLc [10]=totalHoting [11]=totalCosting [12]=totalProfit
+public Vector getLogisticsProfitByBill(String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT tb.id, tb.invoice_no, tb.bill_date, IFNULL(c.name,''), "
+          + "COUNT(l.id), "
+          + "SUM(l.dpf), SUM(l.lh), SUM(l.load_amt), SUM(l.ul), SUM(l.lc), SUM(l.hoting), "
+          + "SUM(l.lh + l.load_amt + l.ul + l.lc + l.hoting), "
+          + "SUM(l.dpf - (l.lh + l.load_amt + l.ul + l.lc + l.hoting)) "
+          + "FROM transport_bill tb "
+          + "JOIN transport_bill_lr tlr ON tlr.bill_id = tb.id "
+          + "JOIN transport_bill_order l ON l.id = tlr.logistics_id "
+          + "JOIN customers c ON c.id = tb.customer_id "
+          + "WHERE tb.is_cancelled = 0 AND l.is_active = 1 "
+          + "AND tb.bill_date BETWEEN ? AND ? "
+          + "GROUP BY tb.id, tb.invoice_no, tb.bill_date, c.name "
+          + "ORDER BY tb.bill_date ASC, tb.id ASC");
+        ps.setString(1, fromDate);
+        ps.setString(2, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 13; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "0");
+            vec.addElement(row);
+        }
+        return vec;
     } finally {
         if (rs  != null) try { rs.close();  } catch (Exception ignored) {}
         if (ps  != null) try { ps.close();  } catch (Exception ignored) {}
