@@ -33,7 +33,7 @@ if ("date".equals(viewMode)) {
 }
 
 // Totals
-double sumDpf=0, sumCosting=0, sumProfit=0, sumLh=0, sumLoad=0, sumUl=0, sumLc=0, sumHoting=0;
+double sumDpf=0, sumCosting=0, sumProfit=0, sumLh=0, sumLoad=0, sumUl=0, sumLc=0, sumHoting=0, sumTax=0;
 if ("date".equals(viewMode)) {
     for (int i = 0; i < dateRows.size(); i++) {
         Vector r = (Vector) dateRows.get(i);
@@ -45,6 +45,7 @@ if ("date".equals(viewMode)) {
         try { sumHoting  += Double.parseDouble(r.get(7).toString()); } catch (Exception _e) {}
         try { sumCosting += Double.parseDouble(r.get(8).toString()); } catch (Exception _e) {}
         try { sumProfit  += Double.parseDouble(r.get(9).toString()); } catch (Exception _e) {}
+        try { sumTax     += Double.parseDouble(r.get(10).toString()); } catch (Exception _e) {}
     }
 } else {
     for (int i = 0; i < billRows.size(); i++) {
@@ -57,6 +58,7 @@ if ("date".equals(viewMode)) {
         try { sumHoting  += Double.parseDouble(r.get(10).toString()); } catch (Exception _e) {}
         try { sumCosting += Double.parseDouble(r.get(11).toString()); } catch (Exception _e) {}
         try { sumProfit  += Double.parseDouble(r.get(12).toString()); } catch (Exception _e) {}
+        try { sumTax     += Double.parseDouble(r.get(13).toString()); } catch (Exception _e) {}
     }
 }
 String profitClass = sumProfit >= 0 ? "text-success" : "text-danger";
@@ -182,6 +184,7 @@ String profitClass = sumProfit >= 0 ? "text-success" : "text-danger";
                         <th class="tbl-amt">HOTING (&#8377;)</th>
                         <th class="tbl-amt">Costing (&#8377;)</th>
                         <th class="tbl-amt">Profit (&#8377;)</th>
+                        <th class="tbl-amt">Tax Collected (&#8377;)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -266,6 +269,7 @@ if (dateRows.isEmpty()) {
                         <th class="tbl-amt">HOTING (&#8377;)</th>
                         <th class="tbl-amt">Costing (&#8377;)</th>
                         <th class="tbl-amt">Profit (&#8377;)</th>
+                        <th class="tbl-amt">Tax Collected (&#8377;)</th>
                         <th class="tbl-amt">Margin %</th>
                     </tr>
                 </thead>
@@ -273,7 +277,7 @@ if (dateRows.isEmpty()) {
 <%
 if (billRows.isEmpty()) {
 %>
-                    <tr><td colspan="14" class="text-center text-muted py-4">No billed orders found for the selected date range.</td></tr>
+                    <tr><td colspan="15" class="text-center text-muted py-4">No billed orders found for the selected date range.</td></tr>
 <%
 } else {
     for (int i = 0; i < billRows.size(); i++) {
@@ -292,6 +296,7 @@ if (billRows.isEmpty()) {
         double hoting   = 0;  try { hoting   = Double.parseDouble(r.get(10).toString()); } catch (Exception _e) {}
         double costing  = 0;  try { costing  = Double.parseDouble(r.get(11).toString()); } catch (Exception _e) {}
         double profit   = 0;  try { profit   = Double.parseDouble(r.get(12).toString()); } catch (Exception _e) {}
+        double taxColl  = 0;  try { taxColl  = Double.parseDouble(r.get(13).toString()); } catch (Exception _e) {}
         double margin   = dpf > 0 ? (profit / dpf) * 100 : 0;
         String pCls = profit >= 0 ? "p-pos" : "p-neg";
         String mCls = margin >= 0 ? "p-pos" : "p-neg";
@@ -310,6 +315,7 @@ if (billRows.isEmpty()) {
                         <td class="tbl-amt"><%=String.format("%,.2f",hoting)%></td>
                         <td class="tbl-amt text-warning fw-semibold"><%=String.format("%,.2f",costing)%></td>
                         <td class="tbl-amt <%=pCls%>"><%=String.format("%,.2f",profit)%></td>
+                        <td class="tbl-amt text-info"><%=taxColl>0?String.format("%,.2f",taxColl):"-"%></td>
                         <td class="tbl-amt <%=mCls%>"><%=String.format("%.1f%%",margin)%></td>
                     </tr>
 <%  } %>
@@ -324,6 +330,7 @@ if (billRows.isEmpty()) {
                         <td class="tbl-amt"><%=String.format("%,.2f",sumHoting)%></td>
                         <td class="tbl-amt text-warning"><%=String.format("%,.2f",sumCosting)%></td>
                         <td class="tbl-amt <%=profitClass%>"><%=String.format("%,.2f",sumProfit)%></td>
+                        <td class="tbl-amt text-info"><%=String.format("%,.2f",sumTax)%></td>
                         <td class="tbl-amt <%=profitClass%>"><%=sumDpf>0?String.format("%.1f%%",(sumProfit/sumDpf)*100):"0.0%"%></td>
                     </tr>
 <% } %>

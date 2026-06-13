@@ -55,8 +55,10 @@ if ("range".equals(viewMode)) {
 }
 
 double reportTotal = 0;
+double reportTaxTotal = 0;
 for (int i = 0; i < reportRows.size(); i++) {
-    try { reportTotal += Double.parseDouble(((Vector)reportRows.get(i)).get(4).toString()); } catch (Exception _e) {}
+    try { reportTotal    += Double.parseDouble(((Vector)reportRows.get(i)).get(4).toString()); } catch (Exception _e) {}
+    try { reportTaxTotal += Double.parseDouble(((Vector)reportRows.get(i)).get(9).toString()); } catch (Exception _e) {}
 }
 %>
 <!DOCTYPE html>
@@ -153,6 +155,7 @@ for (int i = 0; i < reportRows.size(); i++) {
         <div class="card-body py-2 px-3 d-flex align-items-center gap-4">
             <span class="fw-semibold">Collections: <span class="badge bg-secondary"><%=reportRows.size()%></span></span>
             <span class="fw-semibold text-success">Total Collected: <strong>&#8377;<%=String.format("%,.2f",reportTotal)%></strong></span>
+            <span class="fw-semibold text-info">Total Tax: <strong>&#8377;<%=String.format("%,.2f",reportTaxTotal)%></strong></span>
         </div>
     </div>
     <div class="card mst-card">
@@ -166,6 +169,7 @@ for (int i = 0; i < reportRows.size(); i++) {
                         <th>Bill Date</th>
                         <th>Customer</th>
                         <th class="tbl-amt">Amount Collected (&#8377;)</th>
+                        <th class="tbl-amt">Tax (&#8377;)</th>
                         <th>Payment Mode</th>
                         <th>Collected By</th>
                         <th>Collected On</th>
@@ -173,11 +177,12 @@ for (int i = 0; i < reportRows.size(); i++) {
                 </thead>
                 <tbody>
 <% if (reportRows.isEmpty()) { %>
-                    <tr><td colspan="8" class="text-center text-muted py-4">No collections found for the selected date range.</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">No collections found for the selected date range.</td></tr>
 <% } else {
     for (int i = 0; i < reportRows.size(); i++) {
         Vector r = (Vector) reportRows.get(i);
         double amt = 0; try { amt = Double.parseDouble(r.get(4).toString()); } catch (Exception _e) {}
+        double tax = 0; try { tax = Double.parseDouble(r.get(9).toString()); } catch (Exception _e) {}
         int payTypeIdx = 1; try { payTypeIdx = Integer.parseInt(r.get(5).toString()); } catch (Exception _e) {}
         int payModeIdx = 0; try { payModeIdx = Integer.parseInt(r.get(6).toString()); } catch (Exception _e) {}
         String[] typeNames = {"","Cash","Bank","Mixed"};
@@ -194,6 +199,7 @@ for (int i = 0; i < reportRows.size(); i++) {
                         <td><%=billDateDisp%></td>
                         <td><%=r.get(3)%></td>
                         <td class="tbl-amt fw-bold text-success"><%=String.format("%,.2f",amt)%></td>
+                        <td class="tbl-amt text-info"><%=tax>0?String.format("%,.2f",tax):"-"%></td>
                         <td><%=payLabel%></td>
                         <td><%=r.get(7)%></td>
                         <td><%=r.get(8)%></td>
@@ -257,10 +263,10 @@ for (int i = 0; i < reportRows.size(); i++) {
             <div class="table-responsive">
             <table class="table table-bordered mb-0">
                 <thead class="table-dark">
-                    <tr><th>#</th><th>Type</th><th>Mode</th><th class="tbl-amt">Amount (&#8377;)</th><th>Collected By</th><th>Date &amp; Time</th><th class="tbl-amt">Running Balance (&#8377;)</th></tr>
+                    <tr><th>#</th><th>Type</th><th>Mode</th><th class="tbl-amt">Amount (&#8377;)</th><th class="tbl-amt">Tax (&#8377;)</th><th>Collected By</th><th>Date &amp; Time</th><th class="tbl-amt">Running Balance (&#8377;)</th></tr>
                 </thead>
                 <tbody>
-<%  if (pays.isEmpty()) { %><tr><td colspan="7" class="text-center text-muted py-3">No payment records.</td></tr>
+<%  if (pays.isEmpty()) { %><tr><td colspan="8" class="text-center text-muted py-3">No payment records.</td></tr>
 <%  } else {
         double runBal = grandTotal;
         String[] typeNames = {"","Cash","Bank","Mixed"};
@@ -268,7 +274,8 @@ for (int i = 0; i < reportRows.size(); i++) {
         for (int i = 0; i < pays.size(); i++) {
             Vector p = (Vector) pays.get(i);
             double amt = 0; try { amt = Double.parseDouble(p.get(3).toString()); } catch (Exception _e) {}
-            runBal -= amt;
+            double tax = 0; try { tax = Double.parseDouble(p.get(6).toString()); } catch (Exception _e) {}
+            runBal -= (amt + tax);
             if (runBal < 0) runBal = 0;
             String typeLbl = i == 0 ? "Initial Payment" : "Balance Collection";
             String typeBadge = i == 0 ? "bg-primary" : "bg-success";
@@ -283,6 +290,7 @@ for (int i = 0; i < reportRows.size(); i++) {
                         <td><span class="badge <%=typeBadge%>"><%=typeLbl%></span></td>
                         <td><%=payLabel%></td>
                         <td class="tbl-amt fw-bold text-success"><%=String.format("%,.2f",amt)%></td>
+                        <td class="tbl-amt text-info"><%=tax>0?String.format("%,.2f",tax):"-"%></td>
                         <td><%=p.get(4)%></td>
                         <td><%=p.get(5)%></td>
                         <td class="tbl-amt <%=runBal>0?"text-danger fw-bold":"text-success fw-bold"%>"><%=String.format("%,.2f",runBal)%></td>

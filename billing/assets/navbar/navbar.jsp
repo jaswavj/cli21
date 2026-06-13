@@ -112,18 +112,30 @@ for (int i = 0; i < vecPer.size(); i++) {
     </a>
 <% } %>
 <% if (permissions.contains(5)) { %>
+    <a href="<%=request.getContextPath()%>/logistics/supplierBalance/page.jsp" class="sidebar-item">
+      <i class="fa-solid fa-file-invoice"></i>
+      <span>Supplier Collection</span>
+    </a>
+<% } %>
+<% if (permissions.contains(6)) { %>
     <a href="<%=request.getContextPath()%>/logistics/balanceCollection/report.jsp" class="sidebar-item">
       <i class="fa-solid fa-file-invoice"></i>
       <span>Collection Report</span>
     </a>
 <% } %>
-<% if (permissions.contains(6)) { %>
+<% if (permissions.contains(7)) { %>
+    <a href="<%=request.getContextPath()%>/logistics/supplierBalance/report.jsp" class="sidebar-item">
+      <i class="fa-solid fa-file-invoice"></i>
+      <span>Supplier Collection Report</span>
+    </a>
+<% } %>
+<% if (permissions.contains(8)) { %>
     <a href="<%=request.getContextPath()%>/logistics/profitReport/page.jsp" class="sidebar-item">
       <i class="fa-solid fa-chart-line"></i>
       <span>Profit Report</span>
     </a>
 <% } %>
-<% if (permissions.contains(7)) { %>
+<% if (permissions.contains(9)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#productMenu">
         <i class="fas fa-box"></i>
@@ -137,7 +149,7 @@ for (int i = 0; i < vecPer.size(); i++) {
         </div>
     </div>
 <% } %>
-<% if (permissions.contains(8)) { %>
+<% if (permissions.contains(10)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#adminReportMenu">
         <i class="fas fa-chart-pie"></i>

@@ -153,6 +153,45 @@ String type = request.getParameter("type");
                     </div>
                 </div>
 
+                <!-- Supplier Payment Section -->
+                <div class="card p-3 mb-3 border" style="background:#f0f8ff;">
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-truck-ramp-box me-1"></i>Supplier Payment &mdash; LH: <span id="lhDisplay">0.00</span> &#8377;</h6>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold"><i class="fa-solid fa-wallet fa-sm me-1"></i>Payment Type</label>
+                            <div class="btn-group w-100" id="supPayTypeGroup" role="group">
+                                <button type="button" class="btn btn-outline-primary sup-pay-type-btn active" data-type="1" onclick="supSelectPayType(this)">
+                                    <i class="fa-solid fa-money-bill-wave fa-xs me-1"></i>Cash
+                                </button>
+                                <button type="button" class="btn btn-outline-primary sup-pay-type-btn" data-type="2" onclick="supSelectPayType(this)">
+                                    <i class="fa-solid fa-building-columns fa-xs me-1"></i>Bank
+                                </button>
+                            </div>
+                            <input type="hidden" name="supPayType" id="supPayType" value="1">
+                            <input type="hidden" name="supPayMode" id="supPayModeHidden" value="0">
+                        </div>
+                        <div class="col-md-6" id="supPayModeWrap" style="opacity:0.45;">
+                            <label class="form-label fw-semibold"><i class="fa-solid fa-credit-card fa-sm me-1"></i>Payment Mode</label>
+                            <select id="supPayModeSelect" class="form-select fg-inp" disabled>
+                                <option value="1">UPI</option>
+                                <option value="2">Cheque</option>
+                                <option value="3">Credit Card</option>
+                                <option value="4">Debit Card</option>
+                                <option value="5">NEFT</option>
+                                <option value="6">IMPS</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Paid Amount (&#8377;)</label>
+                            <input type="number" step="0.01" min="0" name="supPaid" id="supPaid" class="form-control fg-inp" placeholder="0.00" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Balance (&#8377;)</label>
+                            <input type="text" id="supBalance" class="form-control fg-inp fw-bold" readonly value="0.00" style="color:#dc3545;">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Buttons -->
                 <div class="d-flex gap-2 justify-content-end mt-4">
                     <button type="reset" class="bb bb-outline" onclick="resetForm()">
@@ -257,6 +296,14 @@ $(function() {
 
     // Amount fields: select all on focus
     $('.amount-field').on('focus', function() { this.select(); }).on('input', calcProfit);
+
+    // LH field: also update supplier LH display and balance
+    $('#lh').on('input', function() {
+        var lh = parseFloat($(this).val()) || 0;
+        $('#lhDisplay').text(lh.toFixed(2));
+        calcSupBalance();
+    });
+    $('#supPaid').on('focus', function() { this.select(); }).on('input', calcSupBalance);
 });
 
 function clearLrStatus() {
@@ -278,6 +325,35 @@ function calcProfit() {
     $('#totalAmount, #profitLabel').css('color', color);
 }
 
+function calcSupBalance() {
+    var lh   = parseFloat($('#lh').val())   || 0;
+    var paid = parseFloat($('#supPaid').val()) || 0;
+    var bal  = lh - paid;
+    $('#supBalance').val(bal.toFixed(2));
+    $('#supBalance').css('color', bal > 0 ? '#dc3545' : '#198754');
+}
+
+function supSelectPayType(btn) {
+    $('.sup-pay-type-btn').removeClass('active');
+    $(btn).addClass('active');
+    var type = parseInt($(btn).data('type'));
+    $('#supPayType').val(type);
+    if (type === 1) {
+        $('#supPayModeSelect').prop('disabled', true);
+        $('#supPayModeHidden').val('0');
+        $('#supPayModeWrap').css('opacity', '0.45');
+    } else {
+        $('#supPayModeSelect').prop('disabled', false);
+        $('#supPayModeWrap').css('opacity', '1');
+        $('#supPayModeHidden').val($('#supPayModeSelect').val());
+    }
+}
+
+// sync select -> hidden when changed
+$(document).on('change', '#supPayModeSelect', function() {
+    $('#supPayModeHidden').val($(this).val());
+});
+
 function resetForm() {
     $('#supplierId, #customerId').val('');
     $('#supplierName, #customerName').val('');
@@ -289,6 +365,15 @@ function resetForm() {
     $('#btnSave').show();
     $('#totalAmount').val('0.00');
     $('#totalAmount, #profitLabel').css('color', '');
+    $('#supPaid').val('0');
+    $('#supBalance').val('0.00').css('color', '#dc3545');
+    $('#lhDisplay').text('0.00');
+    $('.sup-pay-type-btn').removeClass('active');
+    $('.sup-pay-type-btn[data-type="1"]').addClass('active');
+    $('#supPayType').val('1');
+    $('#supPayModeHidden').val('0');
+    $('#supPayModeSelect').prop('disabled', true);
+    $('#supPayModeWrap').css('opacity', '0.45');
 }
 
 function validateForm() {
@@ -327,6 +412,13 @@ function validateForm() {
     if (!$('#destination').val().trim()) {
         Swal.fire({ icon: 'warning', title: 'Validation', text: 'Please enter destination.' });
         $('#destination').focus();
+        return false;
+    }
+    var lhVal   = parseFloat($('#lh').val()) || 0;
+    var supPaid = parseFloat($('#supPaid').val()) || 0;
+    if (supPaid > lhVal + 0.001) {
+        Swal.fire({ icon: 'warning', title: 'Validation', text: 'Supplier paid amount cannot exceed LH amount (\u20b9' + lhVal.toFixed(2) + ').' });
+        $('#supPaid').focus();
         return false;
     }
     return true;

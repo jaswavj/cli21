@@ -6,14 +6,11 @@
     Integer userId = (Integer) session.getAttribute("userId");
     if (userId == null) { response.setStatus(401); out.print("Session expired."); return; }
     try {
-        int    billId    = Integer.parseInt(request.getParameter("billId"));
-        double payNow    = Double.parseDouble(request.getParameter("payNow"));
-        double taxAmount = 0;
-        try { taxAmount = Double.parseDouble(request.getParameter("taxAmount")); } catch (Exception _e) {}
-        if (taxAmount < 0) taxAmount = 0;
+        int    lrId    = Integer.parseInt(request.getParameter("lrId"));
+        double payNow  = Double.parseDouble(request.getParameter("payNow"));
         int    payType = Integer.parseInt(request.getParameter("payType"));
         int    payMode = Integer.parseInt(request.getParameter("payMode"));
-        String result  = bill.saveTransportBalancePayment(billId, payNow, taxAmount, payType, payMode, userId);
+        String result  = bill.saveSupplierPayment(lrId, payNow, payType, payMode, userId);
         out.print(result);
     } catch (Exception e) {
         out.print(e.getMessage() != null ? e.getMessage() : "Error saving payment.");

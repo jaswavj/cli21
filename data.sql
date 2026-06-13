@@ -1391,7 +1391,7 @@ CREATE TABLE `transport_bill` (
 
 insert  into `transport_bill`(`id`,`invoice_no`,`bill_date`,`customer_id`,`po_no`,`sac_code`,`grand_total`,`paid_amount`,`balance`,`payment_mode`,`payment_type`,`credit_days`,`due_date`,`is_cancelled`,`cancel_uid`,`cancel_date_time`,`entry_user`,`entry_date`) values 
 (2,'26-1','2026-06-13',2,'TNHG','158563',10000,8000,2000,'Bank/IMPS',2,NULL,NULL,0,NULL,NULL,1,'2026-06-13 12:11:34'),
-(3,'26-2','2026-06-13',4,'TN DEPO','99999',15000,14800,200,'Bank/UPI',2,NULL,NULL,0,NULL,NULL,1,'2026-06-13 13:44:01'),
+(3,'26-2','2026-06-13',4,'TN DEPO','99999',15000,15000,0,'Bank/UPI',2,NULL,NULL,0,NULL,NULL,1,'2026-06-13 13:44:01'),
 (4,'26-3','2026-06-13',1,NULL,NULL,15000,0,15000,'Cash',1,30,'2026-07-13',1,1,'2026-06-13 14:32:45',1,'2026-06-13 14:31:09');
 
 /*Table structure for table `transport_bill_balance` */
@@ -1494,6 +1494,8 @@ CREATE TABLE `transport_bill_order` (
   `destination` varchar(255) NOT NULL,
   `dpf` double NOT NULL DEFAULT '0',
   `lh` double NOT NULL DEFAULT '0',
+  `lh_paid` double NOT NULL DEFAULT '0',
+  `lh_balance` double NOT NULL DEFAULT '0',
   `load_amt` double NOT NULL DEFAULT '0',
   `ul` double NOT NULL DEFAULT '0',
   `lc` double NOT NULL DEFAULT '0',
@@ -1512,12 +1514,12 @@ CREATE TABLE `transport_bill_order` (
 
 /*Data for the table `transport_bill_order` */
 
-insert  into `transport_bill_order`(`id`,`supplier_id`,`vehicle_no`,`driver_phone`,`lr_date`,`lr_no`,`customer_id`,`destination`,`dpf`,`lh`,`load_amt`,`ul`,`lc`,`hoting`,`is_billed`,`is_active`,`entry_user`,`cancel_uid`,`cancel_date_time`,`entry_date_time`) values 
-(1,3,NULL,NULL,'2026-06-12','111',2,'Madurai',10000,1000,2000,2000,2000,500,1,1,1,NULL,NULL,'2026-06-13 12:03:45'),
-(2,3,NULL,NULL,'2026-06-13','222',4,'MADURAI',10000,5000,500,2000,1500,0,1,1,1,NULL,NULL,'2026-06-13 13:39:19'),
-(3,3,NULL,NULL,'2026-06-13','221',4,'Trichy',5000,2000,1000,0,0,0,1,1,1,NULL,NULL,'2026-06-13 13:42:39'),
-(4,5,NULL,NULL,'2026-06-13','235',1,'COIM',15000,5600,0,0,0,0,0,1,1,NULL,NULL,'2026-06-13 14:26:46'),
-(5,3,'TN74AY5777','9999999999','2026-06-13','563',1,'Trichy',15236,8569,0,5263,0,0,0,1,1,NULL,NULL,'2026-06-13 14:39:17');
+insert  into `transport_bill_order`(`id`,`supplier_id`,`vehicle_no`,`driver_phone`,`lr_date`,`lr_no`,`customer_id`,`destination`,`dpf`,`lh`,`lh_paid`,`lh_balance`,`load_amt`,`ul`,`lc`,`hoting`,`is_billed`,`is_active`,`entry_user`,`cancel_uid`,`cancel_date_time`,`entry_date_time`) values 
+(1,3,NULL,NULL,'2026-06-12','111',2,'Madurai',10000,1000,0,1000,2000,2000,2000,500,1,1,1,NULL,NULL,'2026-06-13 12:03:45'),
+(2,3,NULL,NULL,'2026-06-13','222',4,'MADURAI',10000,5000,0,5000,500,2000,1500,0,1,1,1,NULL,NULL,'2026-06-13 13:39:19'),
+(3,3,NULL,NULL,'2026-06-13','221',4,'Trichy',5000,2000,0,2000,1000,0,0,0,1,1,1,NULL,NULL,'2026-06-13 13:42:39'),
+(4,5,NULL,NULL,'2026-06-13','235',1,'COIM',15000,5600,0,5600,0,0,0,0,0,1,1,NULL,NULL,'2026-06-13 14:26:46'),
+(5,3,'TN74AY5777','9999999999','2026-06-13','563',1,'Trichy',15236,8569,1569,7000,0,5263,0,0,0,1,1,NULL,NULL,'2026-06-13 14:39:17');
 
 /*Table structure for table `transport_bill_payment` */
 
@@ -1529,23 +1531,48 @@ CREATE TABLE `transport_bill_payment` (
   `payment_type` tinyint NOT NULL DEFAULT '1' COMMENT '1=Cash 2=Bank 3=Mixed',
   `payment_mode` tinyint NOT NULL DEFAULT '0' COMMENT '0=None 1=UPI 2=Cheque 3=CreditCard 4=DebitCard 5=NEFT 6=IMPS',
   `paid_amount` double NOT NULL DEFAULT '0',
+  `tax_amount` double NOT NULL DEFAULT '0',
   `notes` varchar(255) DEFAULT NULL,
   `entry_user` int DEFAULT NULL,
   `entry_date_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `entry_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_tbp_bill` (`bill_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill_payment` */
 
-insert  into `transport_bill_payment`(`id`,`bill_id`,`payment_type`,`payment_mode`,`paid_amount`,`notes`,`entry_user`,`entry_date_time`,`entry_date`) values 
-(1,2,2,6,5000,NULL,1,'2026-06-13 12:21:10','2026-06-13 12:11:34'),
-(2,2,1,0,2000,NULL,1,'2026-06-13 12:29:55','2026-06-13 12:29:55'),
-(3,2,2,3,1000,NULL,1,'2026-06-13 12:35:05','2026-06-13 12:35:05'),
-(4,3,2,1,5000,NULL,1,'2026-06-13 13:44:01','2026-06-13 13:44:01'),
-(5,3,1,0,9800,NULL,1,'2026-06-13 13:49:02','2026-06-13 13:49:02'),
-(6,4,1,0,0,NULL,1,'2026-06-13 14:31:09','2026-06-13 14:31:09');
+insert  into `transport_bill_payment`(`id`,`bill_id`,`payment_type`,`payment_mode`,`paid_amount`,`tax_amount`,`notes`,`entry_user`,`entry_date_time`,`entry_date`) values 
+(1,2,2,6,5000,0,NULL,1,'2026-06-13 12:21:10','2026-06-13 12:11:34'),
+(2,2,1,0,2000,0,NULL,1,'2026-06-13 12:29:55','2026-06-13 12:29:55'),
+(3,2,2,3,1000,0,NULL,1,'2026-06-13 12:35:05','2026-06-13 12:35:05'),
+(4,3,2,1,5000,0,NULL,1,'2026-06-13 13:44:01','2026-06-13 13:44:01'),
+(5,3,1,0,9800,0,NULL,1,'2026-06-13 13:49:02','2026-06-13 13:49:02'),
+(6,4,1,0,0,0,NULL,1,'2026-06-13 14:31:09','2026-06-13 14:31:09'),
+(7,3,1,0,100,100,NULL,1,'2026-06-13 20:35:44','2026-06-13 20:35:44');
+
+/*Table structure for table `transport_supplier_payment` */
+
+DROP TABLE IF EXISTS `transport_supplier_payment`;
+
+CREATE TABLE `transport_supplier_payment` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `lr_id` int NOT NULL,
+  `payment_type` tinyint NOT NULL DEFAULT '1' COMMENT '1=Cash 2=Bank',
+  `payment_mode` tinyint NOT NULL DEFAULT '0' COMMENT '0=None 1=UPI 2=Cheque 3=CreditCard 4=DebitCard 5=NEFT 6=IMPS',
+  `paid_amount` double NOT NULL DEFAULT '0',
+  `notes` varchar(255) DEFAULT NULL,
+  `entry_user` int DEFAULT NULL,
+  `entry_date_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tsp_lr` (`lr_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+/*Data for the table `transport_supplier_payment` */
+
+insert  into `transport_supplier_payment`(`id`,`lr_id`,`payment_type`,`payment_mode`,`paid_amount`,`notes`,`entry_user`,`entry_date_time`) values 
+(1,5,1,0,569,NULL,1,'2026-06-13 21:06:32'),
+(2,5,1,0,1000,NULL,1,'2026-06-13 21:06:44');
 
 /*Table structure for table `user_modules` */
 
@@ -1555,7 +1582,7 @@ CREATE TABLE `user_modules` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `module_name` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=latin1;
 
 /*Data for the table `user_modules` */
 
@@ -1564,10 +1591,12 @@ insert  into `user_modules`(`id`,`module_name`) values
 (2,'LR Order List'),
 (3,'Transportation Bill'),
 (4,'Balance Collection'),
-(5,'Collection Report'),
-(6,'Profit Report'),
-(7,'Master'),
-(8,'Admin');
+(5,'Supplier collection'),
+(6,'Collection Report'),
+(7,'Supplier collection Report'),
+(8,'Profit Report'),
+(9,'Master'),
+(10,'Admin');
 
 /*Table structure for table `user_permission` */
 
@@ -1582,7 +1611,7 @@ CREATE TABLE `user_permission` (
   PRIMARY KEY (`id`),
   KEY `mod` (`module_id`),
   KEY `uid` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=121 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=123 DEFAULT CHARSET=latin1;
 
 /*Data for the table `user_permission` */
 
@@ -1594,7 +1623,9 @@ insert  into `user_permission`(`id`,`module_id`,`uid`,`date`,`time`) values
 (74,5,1,'2025-09-19','11:43:23'),
 (75,6,1,'2025-09-19','11:43:23'),
 (76,7,1,'2025-09-19','11:43:23'),
-(77,8,1,'2025-09-19','11:43:23');
+(77,8,1,'2025-09-19','11:43:23'),
+(121,9,1,'2025-09-19','11:43:23'),
+(122,10,1,'2025-09-19','11:43:23');
 
 /*Table structure for table `user_special_permission` */
 

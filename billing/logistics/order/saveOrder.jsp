@@ -22,6 +22,9 @@ String loadAmtParam     = request.getParameter("loadAmt");
 String ulParam          = request.getParameter("ul");
 String hotingParam      = request.getParameter("hoting");
 String lcParam          = request.getParameter("lc");
+String supPayTypeParam  = request.getParameter("supPayType");
+String supPayModeParam  = request.getParameter("supPayMode");
+String supPaidParam     = request.getParameter("supPaid");
 
 try {
     int    supplierId = Integer.parseInt(supplierIdParam);
@@ -32,10 +35,14 @@ try {
     double ul         = (ulParam      != null && !ulParam.trim().isEmpty())      ? Double.parseDouble(ulParam)      : 0;
     double hoting     = (hotingParam  != null && !hotingParam.trim().isEmpty())  ? Double.parseDouble(hotingParam)  : 0;
     double lc         = (lcParam      != null && !lcParam.trim().isEmpty())      ? Double.parseDouble(lcParam)      : 0;
+    int    supPayType = (supPayTypeParam != null && !supPayTypeParam.trim().isEmpty()) ? Integer.parseInt(supPayTypeParam) : 1;
+    int    supPayMode = (supPayModeParam != null && !supPayModeParam.trim().isEmpty()) ? Integer.parseInt(supPayModeParam) : 0;
+    double supPaid    = (supPaidParam    != null && !supPaidParam.trim().isEmpty())    ? Double.parseDouble(supPaidParam)   : 0;
 
     bill.saveLogisticsOrder(supplierId, lrDate, lrNo, customerId, destination,
                             vehicleNo, driverPhone,
-                            dpf, lh, loadAmt, ul, hoting, lc, userId);
+                            dpf, lh, loadAmt, ul, hoting, lc,
+                            supPayType, supPayMode, supPaid, userId);
 
     response.sendRedirect(request.getContextPath()
         + "/logistics/order/page.jsp?msg=LR+Order+saved+successfully!&type=success");
