@@ -55,12 +55,13 @@ String contextPath = request.getContextPath();
     .print-header {
         background: linear-gradient(135deg, #0a1f44 0%, #163172 60%, #1a3a8a 100%);
         border-radius: 6px 6px 0 0;
-        padding: 18px 20px 16px;
+        padding: 10px 20px 16px;
+        margin-bottom: 0;
+    }
+    .header-main {
         display: flex;
         align-items: center;
         gap: 18px;
-        margin-bottom: 0;
-        position: relative;
     }
     .logo-wrap img { width: 100px; height: 100px; object-fit: contain; border-radius: 4px; background:#fff; padding:4px; }
     .logo-wrap .no-logo {
@@ -68,19 +69,62 @@ String contextPath = request.getContextPath();
         background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.3);
         font-size:11px; color:rgba(255,255,255,.7); border-radius:4px;
     }
+    .co-block {
+        flex: 1;
+        min-width: 0;
+    }
     .co-name {
         font-size: 32px; font-weight: 900; letter-spacing: 1px;
         text-transform: uppercase; color: #fff;
         text-shadow: 0 1px 4px rgba(0,0,0,.35);
+        line-height: 1.05;
+        word-break: break-word;
     }
     .co-sub  { font-size: 13px; color: #ffffff; margin-top: 4px; white-space: pre-wrap; }
-    .co-gstin-badge {
-        position: absolute; top: 12px; right: 16px;
+    .co-gstin-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    .co-devotion {
+        grid-column: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .co-gstin-right {
+        grid-column: 3;
+        justify-self: end;
         background: rgba(255,255,255,.15);
         border: 1px solid rgba(255,255,255,.35);
-        border-radius: 4px; padding: 4px 12px;
-        font-size: 12px; font-weight: 700; color: #fff;
-        letter-spacing: 0.5px;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    .co-gstin-pill {
+        background: rgba(255,255,255,.15);
+        border: 1px solid rgba(255,255,255,.35);
+        border-radius: 4px; padding: 2px 8px;
+        font-size: 10px; font-weight: 700; color: #fff;
+        letter-spacing: 0.3px;
+    }
+    .co-gstin-icon-left {
+        color: #e53935;
+        font-size: 14px;
+        line-height: 1;
+        font-weight: 700;
+    }
+    .co-gstin-icon-right {
+        color: #2e7d32;
+        font-size: 11px;
+        line-height: 1;
+        font-weight: 700;
     }
     .header-divider {
         height: 5px;
@@ -89,7 +133,7 @@ String contextPath = request.getContextPath();
         border-radius: 0 0 3px 3px;
     }
 
-    <!-- ── Title bar ── -->
+    /* ── Title bar ── */
     .title-bar {
         text-align: center; font-size: 28px; font-weight: 900;
         background: #f0f4ff; border: 1px solid #b8c8f0;
@@ -118,7 +162,7 @@ String contextPath = request.getContextPath();
     .bill-table th, .bill-table td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }
     .bill-table thead th { background: #f5f5f5; font-size: 12px; font-weight: 700; text-align: center; white-space: nowrap; }
     .bill-table td { font-size: 12px; }
-    .td-lr-no  { font-weight: 700; white-space: nowrap; }
+    .td-lr-no  { font-weight: 700; white-space: pre-line; line-height: 1.2; text-align: center; }
     .td-date   { white-space: nowrap; }
     .td-amount { text-align: right; font-weight: 600; white-space: nowrap; }
     .td-qty    { text-align: center; }
@@ -166,10 +210,22 @@ String contextPath = request.getContextPath();
 <div class="page">
 
     <!-- ── ORIGINAL tag ── -->
-    <div class="original-tag">Original</div>
+    <!--div class="original-tag">Original</div-->
 
     <!-- ── Header ── -->
     <div class="print-header">
+        <div class="co-gstin-row">
+            <div class="co-devotion">
+                <span class="co-gstin-icon-left">&#x1F531;</span>
+                <span class="co-gstin-icon-right">&#x5350;</span>
+                <span class="co-gstin-pill">GOD'S GRACE</span>
+                <span class="co-gstin-icon-right">&#x5350; WIN WIN</span>
+            </div>
+            <% if (!co.get(2).toString().isEmpty()) { %>
+            <div class="co-gstin-right">GSTIN: <%= co.get(2) %></div>
+            <% } %>
+        </div>
+        <div class="header-main">
         <div class="logo-wrap">
             <%
             String logoPath = application.getRealPath("/logistics/transportBill/logo.png");
@@ -180,13 +236,11 @@ String contextPath = request.getContextPath();
                 <div class="no-logo">LOGO</div>
             <% } %>
         </div>
-        <div style="flex:1;">
+        <div class="co-block">
             <div class="co-name"><%= co.get(0) %></div>
             <div class="co-sub"><%= co.get(1) %></div>
         </div>
-        <% if (!co.get(2).toString().isEmpty()) { %>
-        <div class="co-gstin-badge">GSTIN: <%= co.get(2) %></div>
-        <% } %>
+        </div>
     </div>
     <div class="header-divider"></div>
 
@@ -231,13 +285,9 @@ String contextPath = request.getContextPath();
                 <span class="inv-lbl">SAC Code</span>
                 <span class="inv-val">: <%= hdr.get(3).toString().isEmpty() ? "-" : hdr.get(3) %></span>
             </div>
-            <div class="inv-row">
-                <span class="inv-lbl">Mode of Payment</span>
-                <span class="inv-val">: <%= hdr.get(7) %></span>
-            </div>
             <% if (!hdr.get(8).toString().isEmpty() && !"0".equals(hdr.get(8).toString())) { %>
             <div class="inv-row">
-                <span class="inv-lbl">Credit Days</span>
+                <span class="inv-lbl">Terms of Payment</span>
                 <span class="inv-val">: <%= hdr.get(8) %> Days</span>
             </div>
             <% } %>

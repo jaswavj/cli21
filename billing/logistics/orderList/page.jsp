@@ -43,6 +43,19 @@ String type = request.getParameter("type");
         .badge-unbilled { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
         .badge-billed   { background: #d1e7dd; color: #0a3622; border: 1px solid #a3cfbb; }
         .tbl-amt { text-align: right; min-width: 64px; }
+        .col-customer { width: 130px; min-width: 130px; max-width: 130px; }
+        .lrno-cell {
+            white-space: pre-line;
+            line-height: 1.2;
+        }
+        .customer-cell {
+            display: inline-block;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
         .filter-card .form-control, .filter-card .form-select { font-size: 13px; }
         .ui-autocomplete { z-index: 99999 !important; }
     </style>
@@ -130,8 +143,8 @@ String type = request.getParameter("type");
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>
-                        <th>Customer</th>
                         <th>Date</th>
+                        <th class="col-customer">Customer</th>
                         <th>LR No</th>
                         <th>Destination</th>
                         <th class="tbl-amt">DPF</th>
@@ -139,7 +152,7 @@ String type = request.getParameter("type");
                         <th class="tbl-amt">LOAD</th>
                         <th class="tbl-amt">U/L</th>
                         <th class="tbl-amt">LC</th>
-                        <th class="tbl-amt">HOTING</th>
+                        <th class="tbl-amt">HALTING</th>
                         <th class="tbl-amt">Costing</th>
                         <th class="tbl-amt">Profit</th>
                         <th>Status</th>
@@ -161,7 +174,7 @@ if (orders.isEmpty()) {
         String suppId     = row.get(1).toString();
         String suppName   = row.get(2).toString().replace("'","\\'");
         String lrDate     = row.get(3).toString();
-        String lrNo       = row.get(4).toString().replace("'","\\'");
+        String lrNo       = row.get(4).toString().replace("'","\\'").replace("\r", "").replace("\n", "\\n");
         String custId     = row.get(5).toString();
         String custName   = row.get(6).toString().replace("'","\\'");
         String dest       = row.get(7).toString().replace("'","\\'");
@@ -201,9 +214,9 @@ if (orders.isEmpty()) {
                         data-lrno="<%=row.get(4).toString().toLowerCase()%>"
                         data-status="<%=badgeTxt.toLowerCase()%>">
                         <td><%=sno%></td>
-                        <td><%=row.get(6).toString()%></td>
                         <td><%=lrDateDisplay%></td>
-                        <td><%=row.get(4).toString()%></td>
+                        <td class="col-customer"><span class="customer-cell" title="<%=row.get(6).toString()%>"><%=row.get(6).toString()%></span></td>
+                        <td class="lrno-cell"><%=row.get(4).toString()%></td>
                         <td><%=row.get(7).toString()%></td>
                         <td class="tbl-amt"><%=dpfStr%></td>
                         <td class="tbl-amt"><%=lhStr%></td>
@@ -225,7 +238,7 @@ if (orders.isEmpty()) {
                 try { tbBillId = bill.getTransportBillIdByLrId(Integer.parseInt(id.toString())); } catch (Exception _ex) {}
                 if (tbBillId > 0) { %>
                             <button class="btn btn-sm btn-info text-white"
-                                onclick="showBillModal('<%=id%>','<%=row.get(4).toString().replace("'","\\'")%>',<%=tbBillId%>)">
+                                onclick="showBillModal('<%=id%>', this.closest('tr').querySelector('.lrno-cell').innerText, <%=tbBillId%>)">
                                 <i class="fas fa-file-invoice"></i> View Bill
                             </button>
 <%              } %><%  } %>
@@ -281,7 +294,7 @@ if (orders.isEmpty()) {
         <div class="row mb-3">
           <div class="col-md-6">
             <label class="form-label fw-semibold">LR No</label>
-            <input type="text" id="m_lrNo" class="form-control fg-inp" maxlength="100" placeholder="LR Number">
+                        <input type="text" id="m_lrNo" class="form-control fg-inp" placeholder="LR Number">
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Customer Name</label>

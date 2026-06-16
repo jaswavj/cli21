@@ -76,17 +76,8 @@ String type = request.getParameter("type");
                     </div>
                 </div>
 
-                <!-- Row 3 : LR No + Customer -->
+                <!-- Row 3 : Customer + Destination -->
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">LR No</label>
-                        <div class="input-group">
-                            <input type="text" name="lrNo" id="lrNo" class="form-control fg-inp"
-                                   placeholder="Enter LR Number" maxlength="100">
-                            <span class="input-group-text" id="lrNoStatus" style="display:none;"></span>
-                        </div>
-                        <div id="lrNoError" class="text-danger small mt-1" style="display:none;"></div>
-                    </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Customer Name</label>
                         <input type="hidden" name="customerId" id="customerId">
@@ -100,16 +91,23 @@ String type = request.getParameter("type");
                         </div>
                         <div id="customerError" class="text-danger small mt-1" style="display:none;">Please select a valid customer from the list.</div>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Destination</label>
+                        <input type="text" name="destination" id="destination" class="form-control fg-inp"
+                               placeholder="Enter destination" maxlength="255">
+                    </div>
                 </div>
 
-                <!-- Row 3 : Destination -->
+                <!-- Row 4 : LR No (full width) -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Destination</label>
-                    <input type="text" name="destination" id="destination" class="form-control fg-inp"
-                           placeholder="Enter destination" maxlength="255">
+                    <label class="form-label fw-semibold">LR No</label>
+                    <textarea name="lrNo" id="lrNo" class="form-control fg-inp" rows="2"
+                              placeholder="Enter LR Number"></textarea>
+                    <span id="lrNoStatus" style="display:none;"></span>
+                    <div id="lrNoError" class="text-danger small mt-1" style="display:none;"></div>
                 </div>
 
-                <!-- Row 4 : Amount boxes -->
+                <!-- Row 5 : Amount boxes -->
                 <div class="card p-3 mb-3 bg-light border">
                     <h6 class="fw-bold mb-3"><i class="fa-solid fa-indian-rupee-sign me-1"></i>Amount Details</h6>
                     <div class="row g-3">

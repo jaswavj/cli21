@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `transport_bill_order` (
   `id`              INT(11)      NOT NULL AUTO_INCREMENT,
   `supplier_id`     INT(11)      NOT NULL,
   `lr_date`         DATE         NOT NULL,
-  `lr_no`           VARCHAR(100) NOT NULL,
+  `lr_no`           TEXT         NOT NULL,
   `customer_id`     INT(11)      NOT NULL,
   `destination`     VARCHAR(255) NOT NULL,
   `dpf`             DOUBLE       NOT NULL DEFAULT 0,

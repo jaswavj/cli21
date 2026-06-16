@@ -466,21 +466,14 @@ if (userId == null) {
 
                     <div class="pay-fields">
 
-                        <!-- PO No + SAC Code -->
+                        <!-- PO No -->
                         <div class="row g-2">
-                            <div class="col-6">
+                            <div class="col-12">
                                 <div class="pay-field-label">
                                     <i class="fa-solid fa-hashtag fa-sm"></i> PO No
                                 </div>
                                 <input type="text" id="poNo" class="pay-inp" style="font-size:13px;"
                                        placeholder="e.g. TN DEPO">
-                            </div>
-                            <div class="col-6">
-                                <div class="pay-field-label">
-                                    <i class="fa-solid fa-barcode fa-sm"></i> SAC Code
-                                </div>
-                                <input type="text" id="sacCode" class="pay-inp" style="font-size:13px;"
-                                       placeholder="e.g. 996791">
                             </div>
                         </div>
 
@@ -1047,7 +1040,7 @@ function saveBill() {
     const payload = {
         customerId:   selectedCustomerId,
         poNo:         $('#poNo').val().trim(),
-        sacCode:      $('#sacCode').val().trim(),
+        sacCode:      '996791',
         grandTotal,
         paidAmount,
         balance,
@@ -1108,7 +1101,6 @@ function resetAll(skipConfirm) {
         $('#creditDaysInp').val('');
         $('#creditDaysWrap').removeClass('visible');
         $('#poNo').val('');
-        $('#sacCode').val('');
         $('#payTypeGroup .pay-mode-btn').removeClass('active');
         $('#payTypeGroup .pay-mode-btn[data-type="1"]').addClass('active');
         $('#payModeSelect').prop('disabled', true).val('1');

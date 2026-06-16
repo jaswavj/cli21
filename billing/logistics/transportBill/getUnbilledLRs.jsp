@@ -13,14 +13,25 @@ if (session.getAttribute("userId") == null) {
 
 try {
     Vector rows = bill.getUnbilledLRList();
+
+    // Escape values for safe JSON output, including multiline text.
+    java.util.function.Function<String, String> escJson = (val) -> {
+        if (val == null) return "";
+        return val.replace("\\", "\\\\")
+                  .replace("\"", "\\\"")
+                  .replace("\r", "\\r")
+                  .replace("\n", "\\n")
+                  .replace("\t", "\\t");
+    };
+
     StringBuilder sb = new StringBuilder("[");
     for (int i = 0; i < rows.size(); i++) {
         Vector row = (Vector) rows.get(i);
-        // Escape helper: replace " with \"
-        String lrNo      = row.get(1).toString().replace("\\", "\\\\").replace("\"", "\\\"");
+        // LR No can be multiline (TEXT); keep line breaks escaped for valid JSON.
+        String lrNo      = escJson.apply(row.get(1).toString());
         String lrDate    = row.get(2).toString();
-        String custName  = row.get(3).toString().replace("\\", "\\\\").replace("\"", "\\\"");
-        String dest      = row.get(4).toString().replace("\\", "\\\\").replace("\"", "\\\"");
+        String custName  = escJson.apply(row.get(3).toString());
+        String dest      = escJson.apply(row.get(4).toString());
         double dpf       = Double.parseDouble(row.get(5).toString());
 
         // Format lr_date from yyyy-MM-dd to dd-MM-yyyy for display
