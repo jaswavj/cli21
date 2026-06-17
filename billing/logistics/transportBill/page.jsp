@@ -530,7 +530,7 @@ if (userId == null) {
                         <!-- Credit Days (shown when balance > 0) -->
                         <div class="credit-days-wrap" id="creditDaysWrap">
                             <span class="cdl"><i class="fa-solid fa-calendar-days fa-xs me-1"></i>Credit Days</span>
-                            <input type="number" id="creditDaysInp" class="credit-days-inp" min="1" max="365" placeholder="e.g. 30">
+                            <input type="text" id="creditDaysInp" class="credit-days-inp" maxlength="50" placeholder="e.g. 30 / Next Monday">
                             <span class="cdunit">days</span>
                         </div>
 
@@ -828,6 +828,7 @@ function renderParticularsSection(lr) {
                 <thead>
                     <tr>
                         <th style="width:26px;">#</th>
+                        <th style="width:120px;">LR No</th>
                         <th>Particular</th>
                         <th style="width:80px;">Qty/Articles</th>
                         <th style="width:90px;">Rate/Wt</th>
@@ -869,6 +870,7 @@ function addParticularsRow(lrId) {
     $tbody.append(`
         <tr id="partRow_${lrId}_${rIdx}">
             <td style="text-align:center;color:#6c757d;font-size:11px;" class="row-sno">${$tbody.children().length + 1}</td>
+            <td><input type="text"   class="tbl-inp inp-lrno"      placeholder="LR No"></td>
             <td><input type="text"   class="tbl-inp inp-particular" placeholder="Particular…"  oninput="recalcLR(${lrId})"></td>
             <td><input type="number" class="tbl-inp inp-sm inp-qty"  placeholder="0"    min="0" step="any" oninput="recalcLR(${lrId})"></td>
             <td><input type="text"   class="tbl-inp inp-sm inp-rate" placeholder="0/text"       oninput="recalcLR(${lrId})"></td>
@@ -1008,7 +1010,7 @@ function saveBill() {
     // Collect payment type & mode
     const payType    = parseInt($('#payTypeGroup .pay-mode-btn.active').data('type')) || 1;
     const payModeInt = payType === 1 ? 0 : (parseInt($('#payModeSelect').val()) || 1);
-    const creditDays = parseInt($('#creditDaysInp').val()) || 0;
+    const creditDays = ($('#creditDaysInp').val() || '').trim();
 
     const totalText = $('#gtAmount').text().replace(/[^\.0-9]/g, '');
     const grandTotal  = parseFloat(totalText) || 0;
@@ -1021,12 +1023,13 @@ function saveBill() {
         const lr = selectedLRs[lrId];
         const parts = [];
         $(`#partBody_${lrId} tr`).each(function() {
+            const lrNo       = $(this).find('.inp-lrno').val()        || '';
             const particular = $(this).find('.inp-particular').val() || '';
             const qty        = $(this).find('.inp-qty').val()         || '';
             const rateWt     = $(this).find('.inp-rate').val()        || '';
             const amount     = parseFloat($(this).find('.inp-amount').val()) || 0;
             if (particular.trim() || amount > 0) {
-                parts.push({ particular, qty, rateWt, amount });
+                parts.push({ lrNo, particular, qty, rateWt, amount });
             }
         });
         return {

@@ -49,7 +49,7 @@ CREATE TABLE `company_details` (
 /*Data for the table `company_details` */
 
 insert  into `company_details`(`id`,`shop_name`,`address`,`gstin`,`print_type`,`printer_name`,`bank_details`,`barcode_printer`) values 
-(2,'JASXBILL','Boothapandi,\r\nKanyakumari Dist,\r\nTamil Nadu-629852\r\nPh- 8667214152','ASDFFD223SDDDDF',2,'','Account no - 8787382929\r\nIFSC - 73738\r\nBranch - hdhdjdjdj','AP4909');
+(2,'PERIYANAYAKI LOGISTICS','Boothapandi,Kanyakumari Dist,Tamil Nadu-629852\r\nPh- 8667214152/2363737373 Gmail - Jaswavijay@gmail.com','ASDFFD223SDDDDF',2,'','Account no - 8787382929\r\nIFSC - 73738\r\nBranch - hdhdjdjdj','AP4909');
 
 /*Table structure for table `configure_bank_details` */
 
@@ -114,12 +114,13 @@ CREATE TABLE `customer_account` (
   `balance` decimal(10,2) NOT NULL DEFAULT '0.00',
   PRIMARY KEY (`id`),
   UNIQUE KEY `customer_id` (`customer_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `customer_account` */
 
 insert  into `customer_account`(`id`,`customer_id`,`advance`,`balance`) values 
-(1,4,0.00,0.00);
+(1,4,0.00,0.00),
+(2,5,0.00,0.00);
 
 /*Table structure for table `customers` */
 
@@ -142,15 +143,16 @@ CREATE TABLE `customers` (
   `local` int DEFAULT '1',
   `exchange_point` double(10,3) DEFAULT '0.000',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `customers` */
 
 insert  into `customers`(`id`,`name`,`phone_number`,`address`,`date`,`time`,`is_eligible_for_commission`,`is_active`,`gstin`,`is_gst`,`salesman`,`area`,`credit_limit`,`local`,`exchange_point`) values 
-(1,'JASWA VIJAY','9597451419','SFASDFSADDFSD \r\nasgsdg \r\nSFSDDSDDGSDG','2026-06-10','21:47:48',0,1,'2112232wfsfffsd',1,NULL,NULL,0.00,1,0.000),
+(1,'JASWA VIJAY JASWA VIJAY JASWA VIJAY JASWA VIJAY','9597451419','SFASDFSADDFSD \r\nasgsdg \r\nSFSDDSDDGSDG','2026-06-10','21:47:48',0,1,'2112232wfsfffsd',1,NULL,NULL,0.00,1,0.000),
 (2,'jeb','9898989898','','2026-06-10','22:20:38',0,1,'',0,NULL,NULL,0.00,1,0.000),
 (3,'cc','','','2026-06-13','11:13:27',0,1,'',0,NULL,NULL,0.00,1,0.000),
-(4,'TABLET','9856985698','SDSDSD\r\nfDGDFGD','2026-06-13','13:38:44',0,1,'789655452222222',1,NULL,NULL,0.00,1,0.000);
+(4,'TABLET','9856985698','SDSDSD\r\nfDGDFGD','2026-06-13','13:38:44',0,1,'789655452222222',1,NULL,NULL,0.00,1,0.000),
+(5,'swift','','','2026-06-17','10:34:08',0,1,'',0,NULL,NULL,0.00,1,0.000);
 
 /*Table structure for table `customers_exchange_point` */
 
@@ -234,6 +236,39 @@ CREATE TABLE `heading` (
 
 insert  into `heading`(`id`,`head1`,`head2`,`head3`,`active`) values 
 (1,'Category','Brand','Product',200);
+
+/*Table structure for table `logistics` */
+
+DROP TABLE IF EXISTS `logistics`;
+
+CREATE TABLE `logistics` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `supplier_id` int NOT NULL,
+  `lr_date` date NOT NULL,
+  `lr_no` varchar(100) NOT NULL,
+  `customer_id` int NOT NULL,
+  `destination` varchar(255) NOT NULL,
+  `dpf` double NOT NULL DEFAULT '0',
+  `lh` double NOT NULL DEFAULT '0',
+  `load_amt` double NOT NULL DEFAULT '0',
+  `ul` double NOT NULL DEFAULT '0',
+  `lc` double NOT NULL DEFAULT '0',
+  `hoting` double NOT NULL DEFAULT '0',
+  `is_billed` tinyint(1) NOT NULL DEFAULT '0',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `entry_user` int NOT NULL,
+  `entry_date_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_supplier_id` (`supplier_id`),
+  KEY `idx_customer_id` (`customer_id`),
+  KEY `idx_lr_date` (`lr_date`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+/*Data for the table `logistics` */
+
+insert  into `logistics`(`id`,`supplier_id`,`lr_date`,`lr_no`,`customer_id`,`destination`,`dpf`,`lh`,`load_amt`,`ul`,`lc`,`hoting`,`is_billed`,`is_active`,`entry_user`,`entry_date_time`) values 
+(1,1,'2026-06-12','111',1,'Trichy',10000,2000,2000,2000,2000,0,1,1,1,'2026-06-12 14:48:23'),
+(2,2,'2026-06-12','112',1,'Madurai',2000,1000,0,0,0,500,1,1,1,'2026-06-12 14:48:56');
 
 /*Table structure for table `order_tables` */
 
@@ -1209,7 +1244,7 @@ CREATE TABLE `prod_supplier` (
   `gstin` varchar(255) DEFAULT NULL,
   `is_gst` int DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
 
 /*Data for the table `prod_supplier` */
 
@@ -1218,7 +1253,8 @@ insert  into `prod_supplier`(`id`,`name`,`phone_number`,`description`,`date`,`ti
 (2,'aaaaa','','','2026-06-11','16:23:03',1,NULL,0),
 (3,'annai','','','2026-06-13','11:11:55',1,NULL,0),
 (4,'TFG','','','2026-06-13','11:16:30',1,NULL,0),
-(5,'TABLET','9898989898','DCSDF\r\nSDGDG','2026-06-13','13:37:41',1,'atp63773HNDCJSD',1);
+(5,'TABLET','9898989898','DCSDF\r\nSDGDG','2026-06-13','13:37:41',1,'atp63773HNDCJSD',1),
+(6,'new sup','','','2026-06-17','10:33:57',1,NULL,0);
 
 /*Table structure for table `prod_supplier_cheque_allocation` */
 
@@ -1374,7 +1410,7 @@ CREATE TABLE `transport_bill` (
   `balance` double NOT NULL DEFAULT '0',
   `payment_mode` varchar(50) NOT NULL DEFAULT 'Credit',
   `payment_type` tinyint DEFAULT '1' COMMENT '''1=Cash 2=Bank 3=Mixed''',
-  `credit_days` int DEFAULT NULL,
+  `credit_days` varchar(255) DEFAULT NULL,
   `due_date` date DEFAULT NULL,
   `is_cancelled` tinyint(1) NOT NULL DEFAULT '0',
   `cancel_uid` int DEFAULT NULL,
@@ -1385,14 +1421,17 @@ CREATE TABLE `transport_bill` (
   KEY `idx_tb_customer` (`customer_id`),
   KEY `idx_tb_date` (`bill_date`),
   KEY `idx_tb_invoice` (`invoice_no`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill` */
 
 insert  into `transport_bill`(`id`,`invoice_no`,`bill_date`,`customer_id`,`po_no`,`sac_code`,`grand_total`,`paid_amount`,`balance`,`payment_mode`,`payment_type`,`credit_days`,`due_date`,`is_cancelled`,`cancel_uid`,`cancel_date_time`,`entry_user`,`entry_date`) values 
 (2,'26-1','2026-06-13',2,'TNHG','158563',10000,8000,2000,'Bank/IMPS',2,NULL,NULL,0,NULL,NULL,1,'2026-06-13 12:11:34'),
 (3,'26-2','2026-06-13',4,'TN DEPO','99999',15000,15000,0,'Bank/UPI',2,NULL,NULL,0,NULL,NULL,1,'2026-06-13 13:44:01'),
-(4,'26-3','2026-06-13',1,NULL,NULL,15000,0,15000,'Cash',1,30,'2026-07-13',1,1,'2026-06-13 14:32:45',1,'2026-06-13 14:31:09');
+(4,'26-3','2026-06-13',1,NULL,NULL,15000,0,15000,'Cash',1,'30','2026-07-13',1,1,'2026-06-13 14:32:45',1,'2026-06-13 14:31:09'),
+(5,'26-4','2026-06-16',1,'tn depo',NULL,1500,500,1000,'Cash',1,'15','2026-07-01',0,NULL,NULL,1,'2026-06-16 15:45:43'),
+(6,'26-5','2026-06-16',1,'ed','996791',15000,0,15000,'Cash',1,'45','2026-07-31',0,NULL,NULL,1,'2026-06-16 15:46:42'),
+(7,'26-6','2026-06-17',2,NULL,'996791',10000,0,10000,'Cash',1,'immediate',NULL,0,NULL,NULL,1,'2026-06-17 17:08:19');
 
 /*Table structure for table `transport_bill_balance` */
 
@@ -1413,12 +1452,14 @@ CREATE TABLE `transport_bill_balance` (
   KEY `idx_tbb_bill` (`bill_id`),
   KEY `idx_tbb_due` (`due_date`),
   KEY `idx_tbb_collected` (`is_collected`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill_balance` */
 
 insert  into `transport_bill_balance`(`id`,`bill_id`,`balance_amount`,`due_date`,`collected_amount`,`collected_date`,`collected_mode`,`is_collected`,`notes`,`entry_date`) values 
-(1,4,15000,'2026-07-13',0,NULL,NULL,0,NULL,'2026-06-13 14:31:09');
+(1,4,15000,'2026-07-13',0,NULL,NULL,0,NULL,'2026-06-13 14:31:09'),
+(2,5,1000,'2026-07-01',0,NULL,NULL,0,NULL,'2026-06-16 15:45:43'),
+(3,6,15000,'2026-07-31',0,NULL,NULL,0,NULL,'2026-06-16 15:46:42');
 
 /*Table structure for table `transport_bill_details` */
 
@@ -1429,6 +1470,7 @@ CREATE TABLE `transport_bill_details` (
   `bill_id` int NOT NULL,
   `bill_lr_id` int NOT NULL,
   `logistics_id` int NOT NULL,
+  `lr_no` varchar(100) DEFAULT NULL,
   `particular` varchar(255) NOT NULL,
   `qty` varchar(50) DEFAULT NULL,
   `rate_wt` varchar(100) DEFAULT NULL,
@@ -1437,24 +1479,30 @@ CREATE TABLE `transport_bill_details` (
   PRIMARY KEY (`id`),
   KEY `idx_tbd_bill` (`bill_id`),
   KEY `idx_tbd_bill_lr` (`bill_lr_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill_details` */
 
-insert  into `transport_bill_details`(`id`,`bill_id`,`bill_lr_id`,`logistics_id`,`particular`,`qty`,`rate_wt`,`amount`,`sort_order`) values 
-(16,3,2,2,'SDSD','','',9000,1),
-(17,3,2,2,'SDFF','','',1000,2),
-(18,3,2,2,'FDDF','','',0,3),
-(19,3,2,2,'DFFDD','','',0,4),
-(20,3,3,3,'DFDDF','1','FD',5000,1),
-(21,3,3,3,'DDF','','',0,2),
-(22,3,3,3,'DFDFDF','','',0,3),
-(23,2,1,1,'ASF','251','AWT',1000,1),
-(24,2,1,1,'LF','1','O',5000,2),
-(25,2,1,1,'GG','1','O',4000,3),
-(26,2,1,1,'EWEEW','1','O',0,4),
-(27,2,1,1,'EWEW','1','O',0,5),
-(28,4,4,4,'ddffd','','',15000,1);
+insert  into `transport_bill_details`(`id`,`bill_id`,`bill_lr_id`,`logistics_id`,`lr_no`,`particular`,`qty`,`rate_wt`,`amount`,`sort_order`) values 
+(16,3,2,2,NULL,'SDSD','','',9000,1),
+(17,3,2,2,NULL,'SDFF','','',1000,2),
+(18,3,2,2,NULL,'FDDF','','',0,3),
+(19,3,2,2,NULL,'DFFDD','','',0,4),
+(20,3,3,3,NULL,'DFDDF','1','FD',5000,1),
+(21,3,3,3,NULL,'DDF','','',0,2),
+(22,3,3,3,NULL,'DFDFDF','','',0,3),
+(23,2,1,1,NULL,'ASF','251','AWT',1000,1),
+(24,2,1,1,NULL,'LF','1','O',5000,2),
+(25,2,1,1,NULL,'GG','1','O',4000,3),
+(26,2,1,1,NULL,'EWEEW','1','O',0,4),
+(27,2,1,1,NULL,'EWEW','1','O',0,5),
+(28,4,4,4,NULL,'ddffd','','',15000,1),
+(29,5,5,6,NULL,'dsd','','',1500,1),
+(30,6,6,4,NULL,'15000','','',15000,1),
+(33,7,7,8,'111','asd','','',10000,1),
+(34,7,7,8,'11232','dasd','','',0,2),
+(35,7,7,8,'111','sasasaa','','',0,3),
+(36,7,7,8,'223','sasd','','',0,4);
 
 /*Table structure for table `transport_bill_lr` */
 
@@ -1469,7 +1517,7 @@ CREATE TABLE `transport_bill_lr` (
   PRIMARY KEY (`id`),
   KEY `idx_tblr_bill` (`bill_id`),
   KEY `idx_tblr_lr` (`logistics_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill_lr` */
 
@@ -1477,7 +1525,10 @@ insert  into `transport_bill_lr`(`id`,`bill_id`,`logistics_id`,`lr_total`,`notes
 (1,2,1,10000,'GFGFGFGF\nfjfjfj'),
 (2,3,2,10000,'DFDFDFDFDFFDFFD'),
 (3,3,3,5000,'DSDSD'),
-(4,4,4,15000,NULL);
+(4,4,4,15000,NULL),
+(5,5,6,1500,NULL),
+(6,6,4,15000,NULL),
+(7,7,8,10000,NULL);
 
 /*Table structure for table `transport_bill_order` */
 
@@ -1489,10 +1540,15 @@ CREATE TABLE `transport_bill_order` (
   `vehicle_no` varchar(50) DEFAULT NULL,
   `driver_phone` varchar(20) DEFAULT NULL,
   `lr_date` date NOT NULL,
-  `lr_no` varchar(100) NOT NULL,
+  `lr_no` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `customer_id` int NOT NULL,
   `destination` varchar(255) NOT NULL,
   `dpf` double NOT NULL DEFAULT '0',
+  `dpf_freight` double NOT NULL DEFAULT '0',
+  `dpf_lr_charge` double NOT NULL DEFAULT '0',
+  `dpf_load` double NOT NULL DEFAULT '0',
+  `dpf_ul` double NOT NULL DEFAULT '0',
+  `dpf_halting` double NOT NULL DEFAULT '0',
   `lh` double NOT NULL DEFAULT '0',
   `lh_paid` double NOT NULL DEFAULT '0',
   `lh_balance` double NOT NULL DEFAULT '0',
@@ -1510,16 +1566,19 @@ CREATE TABLE `transport_bill_order` (
   KEY `idx_supplier_id` (`supplier_id`),
   KEY `idx_customer_id` (`customer_id`),
   KEY `idx_lr_date` (`lr_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill_order` */
 
-insert  into `transport_bill_order`(`id`,`supplier_id`,`vehicle_no`,`driver_phone`,`lr_date`,`lr_no`,`customer_id`,`destination`,`dpf`,`lh`,`lh_paid`,`lh_balance`,`load_amt`,`ul`,`lc`,`hoting`,`is_billed`,`is_active`,`entry_user`,`cancel_uid`,`cancel_date_time`,`entry_date_time`) values 
-(1,3,NULL,NULL,'2026-06-12','111',2,'Madurai',10000,1000,0,1000,2000,2000,2000,500,1,1,1,NULL,NULL,'2026-06-13 12:03:45'),
-(2,3,NULL,NULL,'2026-06-13','222',4,'MADURAI',10000,5000,0,5000,500,2000,1500,0,1,1,1,NULL,NULL,'2026-06-13 13:39:19'),
-(3,3,NULL,NULL,'2026-06-13','221',4,'Trichy',5000,2000,0,2000,1000,0,0,0,1,1,1,NULL,NULL,'2026-06-13 13:42:39'),
-(4,5,NULL,NULL,'2026-06-13','235',1,'COIM',15000,5600,0,5600,0,0,0,0,0,1,1,NULL,NULL,'2026-06-13 14:26:46'),
-(5,3,'TN74AY5777','9999999999','2026-06-13','563',1,'Trichy',15236,8569,1569,7000,0,5263,0,0,0,1,1,NULL,NULL,'2026-06-13 14:39:17');
+insert  into `transport_bill_order`(`id`,`supplier_id`,`vehicle_no`,`driver_phone`,`lr_date`,`lr_no`,`customer_id`,`destination`,`dpf`,`dpf_freight`,`dpf_lr_charge`,`dpf_load`,`dpf_ul`,`dpf_halting`,`lh`,`lh_paid`,`lh_balance`,`load_amt`,`ul`,`lc`,`hoting`,`is_billed`,`is_active`,`entry_user`,`cancel_uid`,`cancel_date_time`,`entry_date_time`) values 
+(1,3,NULL,NULL,'2026-06-12','111\r\n121\r\n212',2,'Madurai',10000,0,0,0,0,0,1000,0,1000,2000,2000,2000,500,1,1,1,NULL,NULL,'2026-06-13 12:03:45'),
+(2,3,NULL,NULL,'2026-06-13','222',4,'MADURAI',10000,0,0,0,0,0,5000,0,5000,500,2000,1500,0,1,1,1,NULL,NULL,'2026-06-13 13:39:19'),
+(3,3,NULL,NULL,'2026-06-13','221',4,'Trichy',5000,0,0,0,0,0,2000,0,2000,1000,0,0,0,1,1,1,NULL,NULL,'2026-06-13 13:42:39'),
+(4,5,NULL,NULL,'2026-06-13','235',1,'COIM',15000,0,0,0,0,0,5600,0,5600,0,0,0,0,1,1,1,NULL,NULL,'2026-06-13 14:26:46'),
+(5,3,'TN74AY5777','9999999999','2026-06-13','563',1,'Trichy',15236,0,0,0,0,0,8569,1569,7000,0,5263,0,0,0,1,1,NULL,NULL,'2026-06-13 14:39:17'),
+(6,3,'TN74AY5777','9999999999','2026-06-16','123\r\n233\r\n344',1,'sdd',1500,0,0,0,0,0,1400,400,1000,0,0,0,0,1,1,1,NULL,NULL,'2026-06-16 15:40:30'),
+(7,6,'TN74AY5779','9999999999','2026-06-17','112',5,'ssssss',12500,200,3000,300,4000,5000,10000,0,10000,120,0,0,0,0,1,1,NULL,NULL,'2026-06-17 10:35:23'),
+(8,2,'TN74AY5777','9999999999','2026-06-17','111\r\n11232',2,'ssss',10000,10000,0,0,0,0,5990,0,5990,0,0,0,0,1,1,1,NULL,NULL,'2026-06-17 17:00:14');
 
 /*Table structure for table `transport_bill_payment` */
 
@@ -1538,7 +1597,7 @@ CREATE TABLE `transport_bill_payment` (
   `entry_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_tbp_bill` (`bill_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill_payment` */
 
@@ -1549,7 +1608,10 @@ insert  into `transport_bill_payment`(`id`,`bill_id`,`payment_type`,`payment_mod
 (4,3,2,1,5000,0,NULL,1,'2026-06-13 13:44:01','2026-06-13 13:44:01'),
 (5,3,1,0,9800,0,NULL,1,'2026-06-13 13:49:02','2026-06-13 13:49:02'),
 (6,4,1,0,0,0,NULL,1,'2026-06-13 14:31:09','2026-06-13 14:31:09'),
-(7,3,1,0,100,100,NULL,1,'2026-06-13 20:35:44','2026-06-13 20:35:44');
+(7,3,1,0,100,100,NULL,1,'2026-06-13 20:35:44','2026-06-13 20:35:44'),
+(8,5,1,0,500,0,NULL,1,'2026-06-16 15:45:43','2026-06-16 15:45:43'),
+(9,6,1,0,0,0,NULL,1,'2026-06-16 15:46:42','2026-06-16 15:46:42'),
+(10,7,1,0,0,0,NULL,1,'2026-06-17 17:08:19','2026-06-17 17:08:19');
 
 /*Table structure for table `transport_supplier_payment` */
 
@@ -1566,13 +1628,14 @@ CREATE TABLE `transport_supplier_payment` (
   `entry_date_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_tsp_lr` (`lr_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_supplier_payment` */
 
 insert  into `transport_supplier_payment`(`id`,`lr_id`,`payment_type`,`payment_mode`,`paid_amount`,`notes`,`entry_user`,`entry_date_time`) values 
 (1,5,1,0,569,NULL,1,'2026-06-13 21:06:32'),
-(2,5,1,0,1000,NULL,1,'2026-06-13 21:06:44');
+(2,5,1,0,1000,NULL,1,'2026-06-13 21:06:44'),
+(3,6,1,0,400,NULL,1,'2026-06-16 15:40:30');
 
 /*Table structure for table `user_modules` */
 

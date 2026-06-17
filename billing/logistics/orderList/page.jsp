@@ -701,17 +701,17 @@ function showBillModal(lrId, lrNo, billId) {
         html += '  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="bmAddRow()"><i class="fas fa-plus me-1"></i>Add Row</button></div>';
         html += '</div>';
         html += '<div class="table-responsive"><table class="table table-bordered table-sm mb-1" id="bmPartTable">';
-        html += '<thead class="table-dark"><tr><th>Particular</th><th style="width:100px">Qty</th><th style="width:130px">Rate/Wt</th><th style="width:120px">Amount (&#8377;)</th><th style="width:40px"></th></tr></thead>';
+        html += '<thead class="table-dark"><tr><th style="width:130px">LR No</th><th>Particular</th><th style="width:100px">Qty</th><th style="width:130px">Rate/Wt</th><th style="width:120px">Amount (&#8377;)</th><th style="width:40px"></th></tr></thead>';
         html += '<tbody id="bmPartBody">';
         if (data.details && data.details.length > 0) {
             for (var i = 0; i < data.details.length; i++) {
-                html += bmRow(data.details[i].particular, data.details[i].qty, data.details[i].rateWt, data.details[i].amount);
+                html += bmRow(data.details[i].lrNo, data.details[i].particular, data.details[i].qty, data.details[i].rateWt, data.details[i].amount);
             }
         } else {
-            html += bmRow('','','',0);
+            html += bmRow('', '', '', '', 0);
         }
         html += '</tbody>';
-        html += '<tfoot><tr><td colspan="3" class="text-end fw-bold">LR Total</td>';
+        html += '<tfoot><tr><td colspan="4" class="text-end fw-bold">LR Total</td>';
         html += '<td><input type="text" id="bm_lrTotal" class="form-control form-control-sm fw-bold" readonly></td><td></td></tr></tfoot>';
         html += '</table></div>';
         html += '<div id="bm_dpfWarning" class="alert alert-warning py-1 mt-1" style="display:none;"><i class="fas fa-exclamation-triangle me-1"></i>LR Total must equal DPF limit of &#8377;' + dpf.toFixed(2) + '!</div>';
@@ -730,8 +730,9 @@ function esc(s) {
     return $('<div>').text(s).html();
 }
 
-function bmRow(particular, qty, rateWt, amount) {
+function bmRow(lrNo, particular, qty, rateWt, amount) {
     return '<tr>'
+        + '<td><input type="text" class="form-control form-control-sm" value="' + esc(lrNo) + '"></td>'
         + '<td><input type="text" class="form-control form-control-sm" value="' + esc(particular) + '"></td>'
         + '<td><input type="text" class="form-control form-control-sm" value="' + esc(qty) + '"></td>'
         + '<td><input type="text" class="form-control form-control-sm" value="' + esc(rateWt) + '"></td>'
@@ -741,7 +742,7 @@ function bmRow(particular, qty, rateWt, amount) {
 }
 
 function bmAddRow() {
-    $('#bmPartBody').append(bmRow('','','',0));
+    $('#bmPartBody').append(bmRow('','','','',0));
 }
 
 function bmCalcTotal() {
@@ -779,10 +780,11 @@ function saveBillEdit() {
     $('#bmPartBody tr').each(function() {
         var inputs = $(this).find('input');
         parts.push({
-            particular: $(inputs[0]).val(),
-            qty:        $(inputs[1]).val(),
-            rateWt:     $(inputs[2]).val(),
-            amount:     parseFloat($(inputs[3]).val()) || 0
+            lrNo:       $(inputs[0]).val(),
+            particular: $(inputs[1]).val(),
+            qty:        $(inputs[2]).val(),
+            rateWt:     $(inputs[3]).val(),
+            amount:     parseFloat($(inputs[4]).val()) || 0
         });
     });
 

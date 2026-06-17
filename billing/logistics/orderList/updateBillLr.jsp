@@ -24,19 +24,21 @@
         JsonArray partsArr = obj.getAsJsonArray("particulars");
 
         int n = partsArr.size();
+        String[] detailLrNos = new String[n];
         String[] parts   = new String[n];
         String[] qtys    = new String[n];
         String[] rates   = new String[n];
         double[] amounts = new double[n];
         for (int i = 0; i < n; i++) {
             JsonObject p = partsArr.get(i).getAsJsonObject();
+            detailLrNos[i] = p.has("lrNo")      ? p.get("lrNo").getAsString()      : "";
             parts[i]   = p.has("particular") ? p.get("particular").getAsString() : "";
             qtys[i]    = p.has("qty")        ? p.get("qty").getAsString()        : "";
             rates[i]   = p.has("rateWt")     ? p.get("rateWt").getAsString()     : "";
             amounts[i] = p.has("amount")     ? p.get("amount").getAsDouble()     : 0;
         }
 
-        int updated = bill.updateTransportBillLR(billId, lrId, poNo, sacCode, lrDate, lrTotal, notes, parts, qtys, rates, amounts);
+        int updated = bill.updateTransportBillLR(billId, lrId, poNo, sacCode, lrDate, lrTotal, notes, detailLrNos, parts, qtys, rates, amounts);
         if (updated > 0) {
             out.print("{\"ok\":true}");
         } else {

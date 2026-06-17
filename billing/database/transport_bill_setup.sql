@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `transport_bill` (
   `paid_amount`   DOUBLE       NOT NULL DEFAULT 0,
   `balance`       DOUBLE       NOT NULL DEFAULT 0,
   `payment_mode`  VARCHAR(50)  NOT NULL DEFAULT 'Credit',
-  `credit_days`   INT          DEFAULT NULL,
+  `credit_days`   VARCHAR(50)  DEFAULT NULL,
   `due_date`      DATE         DEFAULT NULL,
   `is_cancelled`  TINYINT(1)   NOT NULL DEFAULT 0,
   `entry_user`    INT(11)      NOT NULL,
@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `transport_bill_details` (
   `bill_id`      INT(11)      NOT NULL,
   `bill_lr_id`   INT(11)      NOT NULL,
   `logistics_id` INT(11)      NOT NULL,
+  `lr_no`        VARCHAR(100) DEFAULT NULL,
   `particular`   VARCHAR(255) NOT NULL,
   `qty`          VARCHAR(50)  DEFAULT NULL,
   `rate_wt`      VARCHAR(100) DEFAULT NULL,
@@ -81,6 +82,14 @@ CREATE TABLE IF NOT EXISTS `transport_bill_balance` (
 ALTER TABLE `transport_bill`
     ADD COLUMN IF NOT EXISTS `payment_type` TINYINT NOT NULL DEFAULT 1
     COMMENT '1=Cash 2=Bank 3=Mixed' AFTER `payment_mode`;
+
+-- ─── 6b. Change credit_days to text terms (run once) ─────────
+ALTER TABLE `transport_bill`
+  MODIFY COLUMN `credit_days` VARCHAR(50) DEFAULT NULL;
+
+-- ─── 6c. Add editable LR No on particulars rows (run once) ───
+ALTER TABLE `transport_bill_details`
+  ADD COLUMN IF NOT EXISTS `lr_no` VARCHAR(100) DEFAULT NULL AFTER `logistics_id`;
 
 -- ─── 7. Transport Bill Payment Records ───────────────────────
 --  One row per bill at time of save. Tracks type, mode, amount.

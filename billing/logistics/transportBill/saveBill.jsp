@@ -32,7 +32,7 @@ try {
     double balance     = obj.get("balance").getAsDouble();
     int    paymentType    = obj.has("paymentType")    ? obj.get("paymentType").getAsInt()    : 1;
     int    paymentModeInt = obj.has("paymentModeInt") ? obj.get("paymentModeInt").getAsInt() : 0;
-    int    creditDays     = obj.has("creditDays")     ? obj.get("creditDays").getAsInt()     : 0;
+    String creditDays     = obj.has("creditDays")     ? obj.get("creditDays").getAsString()  : "";
 
     JsonArray lrsArr   = obj.getAsJsonArray("lrs");
     int nLRs           = lrsArr.size();
@@ -49,6 +49,7 @@ try {
     }
 
     String[] particulars = new String[totalParts];
+    String[] detailLrNos = new String[totalParts];
     String[] quantities  = new String[totalParts];
     String[] rateWts     = new String[totalParts];
     double[] amounts     = new double[totalParts];
@@ -63,6 +64,7 @@ try {
         lrPartCounts[i]  = parts.size();
         for (int j = 0; j < parts.size(); j++) {
             JsonObject p      = parts.get(j).getAsJsonObject();
+            detailLrNos[partIdx] = p.has("lrNo")       ? p.get("lrNo").getAsString()       : "";
             particulars[partIdx] = p.has("particular") ? p.get("particular").getAsString() : "";
             quantities[partIdx]  = p.has("qty")        ? p.get("qty").getAsString()        : "";
             rateWts[partIdx]     = p.has("rateWt")     ? p.get("rateWt").getAsString()     : "";
@@ -77,7 +79,7 @@ try {
         grandTotal, paidAmount, balance,
         paymentType, paymentModeInt, creditDays,
         lrIds, lrTotals, lrNotes, lrPartCounts,
-        particulars, quantities, rateWts, amounts,
+        detailLrNos, particulars, quantities, rateWts, amounts,
         userId
     );
 

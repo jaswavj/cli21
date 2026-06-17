@@ -30,10 +30,11 @@
             Vector d = (Vector) details.get(i);
             if (i > 0) json.append(",");
             json.append("{\"id\":").append(d.get(0));
-            json.append(",\"particular\":\"").append(esc(d.get(1).toString())).append("\"");
-            json.append(",\"qty\":\"").append(esc(d.get(2).toString())).append("\"");
-            json.append(",\"rateWt\":\"").append(esc(d.get(3).toString())).append("\"");
-            json.append(",\"amount\":").append(d.get(4)).append("}");
+            json.append(",\"lrNo\":\"").append(esc(d.get(1).toString())).append("\"");
+            json.append(",\"particular\":\"").append(esc(d.get(2).toString())).append("\"");
+            json.append(",\"qty\":\"").append(esc(d.get(3).toString())).append("\"");
+            json.append(",\"rateWt\":\"").append(esc(d.get(4).toString())).append("\"");
+            json.append(",\"amount\":").append(d.get(5)).append("}");
         }
         json.append("]}");
         out.print(json.toString());

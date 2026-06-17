@@ -7111,9 +7111,9 @@ public Vector getUnbilledLRList() throws Exception {
 public String saveTransportBill(
         int customerId, String poNo, String sacCode,
         double grandTotal, double paidAmount, double balance,
-        int paymentType, int paymentModeInt, int creditDays,
-        int[] lrIds, double[] lrTotals, String[] lrNotes, int[] lrPartCounts,
-        String[] particulars, String[] quantities, String[] rateWts, double[] amounts,
+    int paymentType, int paymentModeInt, String creditDays,
+    int[] lrIds, double[] lrTotals, String[] lrNotes, int[] lrPartCounts,
+    String[] detailLrNos, String[] particulars, String[] quantities, String[] rateWts, double[] amounts,
         int entryUser) throws Exception {
 
     // Map payment type int → label
@@ -7147,11 +7147,21 @@ public String saveTransportBill(
         rs.close(); ps.close();
         invoiceNo = year + "-" + nextCount;
 
-        // Compute due_date if Credit mode (creditDays passed for future use, currently 0)
+        String creditDaysText = (creditDays != null) ? creditDays.trim() : "";
+        Integer creditDaysInt = null;
+        if (!creditDaysText.isEmpty() && creditDaysText.matches("\\d+")) {
+            try {
+                creditDaysInt = Integer.valueOf(creditDaysText);
+            } catch (NumberFormatException ignored) {
+                creditDaysInt = null;
+            }
+        }
+
+        // Compute due_date only when terms are numeric (legacy behavior)
         String dueDate = null;
-        if (creditDays > 0) {
+        if (creditDaysInt != null && creditDaysInt.intValue() > 0) {
             ps = con.prepareStatement("SELECT DATE_ADD(CURDATE(), INTERVAL ? DAY)");
-            ps.setInt(1, creditDays);
+            ps.setInt(1, creditDaysInt.intValue());
             rs = ps.executeQuery();
             if (rs.next()) dueDate = rs.getString(1);
             rs.close(); ps.close();
@@ -7173,8 +7183,8 @@ public String saveTransportBill(
         ps.setDouble(7, balance);
         ps.setString(8, paymentModeStr);
         ps.setInt(9, paymentType);
-        if (creditDays > 0) ps.setInt(10, creditDays);
-        else ps.setNull(10, java.sql.Types.INTEGER);
+        if (!creditDaysText.isEmpty()) ps.setString(10, creditDaysText);
+        else ps.setNull(10, java.sql.Types.VARCHAR);
         ps.setString(11, dueDate);
         ps.setInt(12, entryUser);
         ps.executeUpdate();
@@ -7203,19 +7213,20 @@ public String saveTransportBill(
             // transport_bill_details (batch)
             ps = con.prepareStatement(
                 "INSERT INTO transport_bill_details "
-                + "(bill_id,bill_lr_id,logistics_id,particular,qty,rate_wt,amount,sort_order) "
-                + "VALUES (?,?,?,?,?,?,?,?)");
+                + "(bill_id,bill_lr_id,logistics_id,lr_no,particular,qty,rate_wt,amount,sort_order) "
+                + "VALUES (?,?,?,?,?,?,?,?,?)");
             int count = lrPartCounts[i];
             for (int j = 0; j < count; j++) {
                 int idx = partOffset + j;
                 ps.setInt(1, billId);
                 ps.setInt(2, billLrId);
                 ps.setInt(3, lrIds[i]);
-                ps.setString(4, particulars[idx] != null ? particulars[idx] : "");
-                ps.setString(5, quantities[idx]);
-                ps.setString(6, rateWts[idx]);
-                ps.setDouble(7, amounts[idx]);
-                ps.setInt(8, j + 1);
+                ps.setString(4, (detailLrNos[idx] != null && !detailLrNos[idx].isEmpty()) ? detailLrNos[idx] : null);
+                ps.setString(5, particulars[idx] != null ? particulars[idx] : "");
+                ps.setString(6, quantities[idx]);
+                ps.setString(7, rateWts[idx]);
+                ps.setDouble(8, amounts[idx]);
+                ps.setInt(9, j + 1);
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -7230,7 +7241,7 @@ public String saveTransportBill(
         }
 
         // Credit balance record (legacy, kept for backward compat)
-        if (creditDays > 0 && balance > 0 && dueDate != null) {
+        if (balance > 0 && dueDate != null) {
             ps = con.prepareStatement(
                 "INSERT INTO transport_bill_balance (bill_id,balance_amount,due_date) VALUES (?,?,?)");
             ps.setInt(1, billId);
@@ -7312,14 +7323,14 @@ public Vector getTransportBillForPrint(int billId) throws Exception {
 
         // [2] Particulars (indexed by bill_lr_id)
         ps = con.prepareStatement(
-            "SELECT bill_lr_id, particular, IFNULL(qty,''), IFNULL(rate_wt,''), amount "
+            "SELECT bill_lr_id, IFNULL(lr_no,''), particular, IFNULL(qty,''), IFNULL(rate_wt,''), amount "
             + "FROM transport_bill_details WHERE bill_id = ? ORDER BY bill_lr_id, sort_order");
         ps.setInt(1, billId);
         rs = ps.executeQuery();
         Vector partList = new Vector();
         while (rs.next()) {
             Vector row = new Vector();
-            for (int i = 1; i <= 5; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            for (int i = 1; i <= 6; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
             partList.addElement(row);
         }
         rs.close(); ps.close();
@@ -7382,7 +7393,7 @@ public Vector getTransportBillEditData(int lrId) throws Exception {
         // Header
         ps = con.prepareStatement(
             "SELECT tb.id, tb.invoice_no, IFNULL(tb.po_no,''), IFNULL(tb.sac_code,''), "
-          + " tbo.lr_no, tbo.lr_date, tlr.lr_total, tbo.dpf, IFNULL(tlr.notes,'') "
+                    + " tbo.lr_no, tbo.lr_date, tlr.lr_total, tbo.dpf, IFNULL(tlr.notes,'') "
           + "FROM transport_bill_lr tlr "
           + "JOIN transport_bill tb  ON tb.id  = tlr.bill_id "
           + "JOIN transport_bill_order tbo ON tbo.id = tlr.logistics_id "
@@ -7400,7 +7411,7 @@ public Vector getTransportBillEditData(int lrId) throws Exception {
 
         // Particulars
         ps = con.prepareStatement(
-            "SELECT tbd.id, tbd.particular, IFNULL(tbd.qty,''), IFNULL(tbd.rate_wt,''), tbd.amount "
+                        "SELECT tbd.id, IFNULL(tbd.lr_no,''), tbd.particular, IFNULL(tbd.qty,''), IFNULL(tbd.rate_wt,''), tbd.amount "
           + "FROM transport_bill_details tbd "
           + "JOIN transport_bill_lr tlr ON tlr.id = tbd.bill_lr_id "
           + "WHERE tlr.logistics_id = ? ORDER BY tbd.sort_order");
@@ -7409,7 +7420,7 @@ public Vector getTransportBillEditData(int lrId) throws Exception {
         Vector details = new Vector();
         while (rs.next()) {
             Vector row = new Vector();
-            for (int i = 1; i <= 5; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+                        for (int i = 1; i <= 6; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
             details.addElement(row);
         }
         result.addElement(details);
@@ -7424,8 +7435,8 @@ public Vector getTransportBillEditData(int lrId) throws Exception {
 // ── updateTransportBillLR ─────────────────────────────────────
 // Updates po_no, sac_code on the bill header and replaces particulars for one LR.
 public int updateTransportBillLR(int billId, int lrId, String poNo, String sacCode,
-        String lrDate, double lrTotal, String notes, String[] particulars, String[] quantities,
-        String[] rateWts, double[] amounts) throws Exception {
+    String lrDate, double lrTotal, String notes, String[] detailLrNos, String[] particulars,
+    String[] quantities, String[] rateWts, double[] amounts) throws Exception {
     Connection con = null;
     PreparedStatement ps = null;
     ResultSet rs = null;
@@ -7492,17 +7503,18 @@ public int updateTransportBillLR(int billId, int lrId, String poNo, String sacCo
         // Re-insert particulars
         ps = con.prepareStatement(
             "INSERT INTO transport_bill_details "
-          + "(bill_id,bill_lr_id,logistics_id,particular,qty,rate_wt,amount,sort_order) "
-          + "VALUES (?,?,?,?,?,?,?,?)");
+                    + "(bill_id,bill_lr_id,logistics_id,lr_no,particular,qty,rate_wt,amount,sort_order) "
+                    + "VALUES (?,?,?,?,?,?,?,?,?)");
         for (int j = 0; j < particulars.length; j++) {
             ps.setInt(1, billId);
             ps.setInt(2, billLrId);
             ps.setInt(3, lrId);
-            ps.setString(4, particulars[j] != null ? particulars[j] : "");
-            ps.setString(5, quantities[j]);
-            ps.setString(6, rateWts[j]);
-            ps.setDouble(7, amounts[j]);
-            ps.setInt(8, j + 1);
+                        ps.setString(4, (detailLrNos[j] != null && !detailLrNos[j].isEmpty()) ? detailLrNos[j] : null);
+                        ps.setString(5, particulars[j] != null ? particulars[j] : "");
+                        ps.setString(6, quantities[j]);
+                        ps.setString(7, rateWts[j]);
+                        ps.setDouble(8, amounts[j]);
+                        ps.setInt(9, j + 1);
             ps.addBatch();
         }
         ps.executeBatch();
