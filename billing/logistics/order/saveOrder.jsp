@@ -16,7 +16,11 @@ String customerIdParam  = request.getParameter("customerId");
 String destination      = request.getParameter("destination");
 String vehicleNo        = request.getParameter("vehicleNo");
 String driverPhone      = request.getParameter("driverPhone");
-String dpfParam         = request.getParameter("dpf");
+String dpfFreightParam  = request.getParameter("dpfFreight");
+String dpfLrChargeParam = request.getParameter("dpfLrCharge");
+String dpfLoadParam     = request.getParameter("dpfLoad");
+String dpfUlParam       = request.getParameter("dpfUl");
+String dpfHaltingParam  = request.getParameter("dpfHalting");
 String lhParam          = request.getParameter("lh");
 String loadAmtParam     = request.getParameter("loadAmt");
 String ulParam          = request.getParameter("ul");
@@ -29,7 +33,11 @@ String supPaidParam     = request.getParameter("supPaid");
 try {
     int    supplierId = Integer.parseInt(supplierIdParam);
     int    customerId = Integer.parseInt(customerIdParam);
-    double dpf        = (dpfParam     != null && !dpfParam.trim().isEmpty())     ? Double.parseDouble(dpfParam)     : 0;
+    double dpfFreight = (dpfFreightParam != null && !dpfFreightParam.trim().isEmpty()) ? Double.parseDouble(dpfFreightParam) : 0;
+    double dpfLrCharge = (dpfLrChargeParam != null && !dpfLrChargeParam.trim().isEmpty()) ? Double.parseDouble(dpfLrChargeParam) : 0;
+    double dpfLoad    = (dpfLoadParam != null && !dpfLoadParam.trim().isEmpty()) ? Double.parseDouble(dpfLoadParam) : 0;
+    double dpfUl      = (dpfUlParam != null && !dpfUlParam.trim().isEmpty()) ? Double.parseDouble(dpfUlParam) : 0;
+    double dpfHalting = (dpfHaltingParam != null && !dpfHaltingParam.trim().isEmpty()) ? Double.parseDouble(dpfHaltingParam) : 0;
     double lh         = (lhParam      != null && !lhParam.trim().isEmpty())      ? Double.parseDouble(lhParam)      : 0;
     double loadAmt    = (loadAmtParam != null && !loadAmtParam.trim().isEmpty()) ? Double.parseDouble(loadAmtParam) : 0;
     double ul         = (ulParam      != null && !ulParam.trim().isEmpty())      ? Double.parseDouble(ulParam)      : 0;
@@ -41,7 +49,8 @@ try {
 
     bill.saveLogisticsOrder(supplierId, lrDate, lrNo, customerId, destination,
                             vehicleNo, driverPhone,
-                            dpf, lh, loadAmt, ul, hoting, lc,
+                            dpfFreight, dpfLrCharge, dpfLoad, dpfUl, dpfHalting,
+                            lh, loadAmt, ul, hoting, lc,
                             supPayType, supPayMode, supPaid, userId);
 
     response.sendRedirect(request.getContextPath()

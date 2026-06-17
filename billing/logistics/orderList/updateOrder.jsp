@@ -12,7 +12,11 @@
         String lrNo        = request.getParameter("lrNo").trim();
         int    customerId  = Integer.parseInt(request.getParameter("customerId").trim());
         String destination = request.getParameter("destination").trim();
-        double dpf         = Double.parseDouble(request.getParameter("dpf").trim());
+        double dpfFreight  = Double.parseDouble(request.getParameter("dpfFreight").trim());
+        double dpfLrCharge = Double.parseDouble(request.getParameter("dpfLrCharge").trim());
+        double dpfLoad     = Double.parseDouble(request.getParameter("dpfLoad").trim());
+        double dpfUl       = Double.parseDouble(request.getParameter("dpfUl").trim());
+        double dpfHalting  = Double.parseDouble(request.getParameter("dpfHalting").trim());
         double lh          = Double.parseDouble(request.getParameter("lh").trim());
         double loadAmt     = Double.parseDouble(request.getParameter("loadAmt").trim());
         double ul          = Double.parseDouble(request.getParameter("ul").trim());
@@ -21,7 +25,8 @@
 
         int updated = bill.updateLogisticsOrder(id, supplierId, lrDate, lrNo,
                                                 customerId, destination,
-                                                dpf, lh, loadAmt, ul, hoting, lc);
+                            dpfFreight, dpfLrCharge, dpfLoad, dpfUl, dpfHalting,
+                            lh, loadAmt, ul, hoting, lc);
         if (updated > 0) {
             out.print("OK");
         } else {

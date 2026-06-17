@@ -10,6 +10,11 @@ CREATE TABLE IF NOT EXISTS `transport_bill_order` (
   `customer_id`     INT(11)      NOT NULL,
   `destination`     VARCHAR(255) NOT NULL,
   `dpf`             DOUBLE       NOT NULL DEFAULT 0,
+  `dpf_freight`     DOUBLE       NOT NULL DEFAULT 0,
+  `dpf_lr_charge`   DOUBLE       NOT NULL DEFAULT 0,
+  `dpf_load`        DOUBLE       NOT NULL DEFAULT 0,
+  `dpf_ul`          DOUBLE       NOT NULL DEFAULT 0,
+  `dpf_halting`     DOUBLE       NOT NULL DEFAULT 0,
   `lh`              DOUBLE       NOT NULL DEFAULT 0,
   `load_amt`        DOUBLE       NOT NULL DEFAULT 0,
   `ul`              DOUBLE       NOT NULL DEFAULT 0,
@@ -29,6 +34,13 @@ CREATE TABLE IF NOT EXISTS `transport_bill_order` (
 
 -- Add LC column (run if table already exists)
 ALTER TABLE `transport_bill_order` ADD COLUMN `lc` DOUBLE NOT NULL DEFAULT 0 AFTER `ul`;
+
+-- Add DPF split columns (run if table already exists)
+ALTER TABLE `transport_bill_order` ADD COLUMN `dpf_freight` DOUBLE NOT NULL DEFAULT 0 AFTER `dpf`;
+ALTER TABLE `transport_bill_order` ADD COLUMN `dpf_lr_charge` DOUBLE NOT NULL DEFAULT 0 AFTER `dpf_freight`;
+ALTER TABLE `transport_bill_order` ADD COLUMN `dpf_load` DOUBLE NOT NULL DEFAULT 0 AFTER `dpf_lr_charge`;
+ALTER TABLE `transport_bill_order` ADD COLUMN `dpf_ul` DOUBLE NOT NULL DEFAULT 0 AFTER `dpf_load`;
+ALTER TABLE `transport_bill_order` ADD COLUMN `dpf_halting` DOUBLE NOT NULL DEFAULT 0 AFTER `dpf_ul`;
 
 -- Add cancel tracking columns (run if table already exists)
 ALTER TABLE `transport_bill_order` ADD COLUMN `cancel_uid` INT NULL DEFAULT NULL AFTER `entry_user`;

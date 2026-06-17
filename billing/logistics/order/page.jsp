@@ -111,37 +111,62 @@ String type = request.getParameter("type");
                 <div class="card p-3 mb-3 bg-light border">
                     <h6 class="fw-bold mb-3"><i class="fa-solid fa-indian-rupee-sign me-1"></i>Amount Details</h6>
                     <div class="row g-3">
-                        <div class="col-6 col-md-4">
-                            <label class="form-label fw-semibold">DPF</label>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold" id="dpfLabel" title="Freight: 0.00 | LR Charge: 0.00 | Load: 0.00 | U/L: 0.00 | Halting: 0.00">DPF</label>
                             <input type="number" step="0.01" min="0" name="dpf" id="dpf"
+                                   class="form-control fg-inp" placeholder="0.00" value="0" readonly>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">Freight</label>
+                            <input type="number" step="0.01" min="0" name="dpfFreight" id="dpfFreight"
                                    class="form-control fg-inp amount-field" placeholder="0.00" value="0">
                         </div>
-                        <div class="col-6 col-md-4">
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">LR Charge</label>
+                            <input type="number" step="0.01" min="0" name="dpfLrCharge" id="dpfLrCharge"
+                                   class="form-control fg-inp amount-field" placeholder="0.00" value="0">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">Load</label>
+                            <input type="number" step="0.01" min="0" name="dpfLoad" id="dpfLoad"
+                                   class="form-control fg-inp amount-field" placeholder="0.00" value="0">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">U/L</label>
+                            <input type="number" step="0.01" min="0" name="dpfUl" id="dpfUl"
+                                   class="form-control fg-inp amount-field" placeholder="0.00" value="0">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">Halting</label>
+                            <input type="number" step="0.01" min="0" name="dpfHalting" id="dpfHalting"
+                                   class="form-control fg-inp amount-field" placeholder="0.00" value="0">
+                        </div>
+                        <div class="col-6 col-md-2">
                             <label class="form-label fw-semibold">LH</label>
                             <input type="number" step="0.01" min="0" name="lh" id="lh"
                                    class="form-control fg-inp amount-field" placeholder="0.00" value="0">
                         </div>
-                        <div class="col-6 col-md-4">
+                        <div class="col-6 col-md-2">
                             <label class="form-label fw-semibold">LOAD</label>
                             <input type="number" step="0.01" min="0" name="loadAmt" id="loadAmt"
                                    class="form-control fg-inp amount-field" placeholder="0.00" value="0">
                         </div>
-                        <div class="col-6 col-md-4">
+                        <div class="col-6 col-md-2">
                             <label class="form-label fw-semibold">U/L</label>
                             <input type="number" step="0.01" min="0" name="ul" id="ul"
                                    class="form-control fg-inp amount-field" placeholder="0.00" value="0">
                         </div>
-                        <div class="col-6 col-md-4">
+                        <div class="col-6 col-md-2">
                             <label class="form-label fw-semibold">LC</label>
                             <input type="number" step="0.01" min="0" name="lc" id="lc"
                                    class="form-control fg-inp amount-field" placeholder="0.00" value="0">
                         </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label fw-semibold">HOTING</label>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">HALTING</label>
                             <input type="number" step="0.01" min="0" name="hoting" id="hoting"
                                    class="form-control fg-inp amount-field" placeholder="0.00" value="0">
                         </div>
-                        <div class="col-6 col-md-4 d-flex align-items-end">
+                        <div class="col-6 col-md-2 d-flex align-items-end">
                             <div class="w-100">
                                 <label class="form-label fw-semibold" id="profitLabel">Profit</label>
                                 <input type="text" id="totalAmount" class="form-control fg-inp fw-bold"
@@ -210,16 +235,6 @@ var lrNoValid    = true;
 var lrNoChecked  = false;
 
 $(function() {
-
-    <% if (msg != null) { %>
-    Swal.fire({
-        icon: '<%= "danger".equals(type) ? "error" : ("warning".equals(type) ? "warning" : "success") %>',
-        title: '<%= "danger".equals(type) ? "Error" : ("warning".equals(type) ? "Warning" : "Success") %>',
-        text: '<%=msg.replace("'", "\\'")%>',
-        confirmButtonText: 'OK'
-    });
-    history.replaceState(null, '', window.location.pathname);
-    <% } %>
 
     // Supplier autocomplete (AJAX)
     $('#supplierName').autocomplete({
@@ -302,6 +317,8 @@ $(function() {
         calcSupBalance();
     });
     $('#supPaid').on('focus', function() { this.select(); }).on('input', calcSupBalance);
+
+    calcProfit();
 });
 
 function clearLrStatus() {
@@ -311,12 +328,24 @@ function clearLrStatus() {
 }
 
 function calcProfit() {
-    var dpf    = parseFloat($('#dpf').val())     || 0;
+    var freight = parseFloat($('#dpfFreight').val())  || 0;
+    var lrCharge = parseFloat($('#dpfLrCharge').val()) || 0;
+    var loadDp   = parseFloat($('#dpfLoad').val())     || 0;
+    var ulDp     = parseFloat($('#dpfUl').val())       || 0;
+    var halting  = parseFloat($('#dpfHalting').val())  || 0;
+    var dpf      = freight + lrCharge + loadDp + ulDp + halting;
     var lh     = parseFloat($('#lh').val())      || 0;
     var load   = parseFloat($('#loadAmt').val()) || 0;
     var ul     = parseFloat($('#ul').val())      || 0;
     var lc     = parseFloat($('#lc').val())      || 0;
     var hoting = parseFloat($('#hoting').val())  || 0;
+    var dpfTip = 'Freight: ' + freight.toFixed(2)
+        + ' | LR Charge: ' + lrCharge.toFixed(2)
+        + ' | Load: ' + loadDp.toFixed(2)
+        + ' | U/L: ' + ulDp.toFixed(2)
+        + ' | Halting: ' + halting.toFixed(2);
+    $('#dpf').val(dpf.toFixed(2)).attr('title', dpfTip);
+    $('#dpfLabel').attr('title', dpfTip);
     var profit = dpf - (lh + load + ul + lc + hoting);
     $('#totalAmount').val(profit.toFixed(2));
     var color = profit > 0 ? '#198754' : (profit < 0 ? '#dc3545' : '');
@@ -357,10 +386,13 @@ function resetForm() {
     $('#supplierName, #customerName').val('');
     $('#supplierError, #customerError').hide();
     $('#vehicleNo, #driverPhone').val('');
+    $('#dpfFreight, #dpfLrCharge, #dpfLoad, #dpfUl, #dpfHalting').val('0');
     clearLrStatus();
     lrNoValid   = true;
     lrNoChecked = false;
     $('#btnSave').show();
+    $('#dpf').val('0.00').attr('title', 'Freight: 0.00 | LR Charge: 0.00 | Load: 0.00 | U/L: 0.00 | Halting: 0.00');
+    $('#dpfLabel').attr('title', 'Freight: 0.00 | LR Charge: 0.00 | Load: 0.00 | U/L: 0.00 | Halting: 0.00');
     $('#totalAmount').val('0.00');
     $('#totalAmount, #profitLabel').css('color', '');
     $('#supPaid').val('0');
@@ -411,6 +443,14 @@ function validateForm() {
         Swal.fire({ icon: 'warning', title: 'Validation', text: 'Please enter destination.' });
         $('#destination').focus();
         return false;
+    }
+    var dpfFields = ['#dpfFreight', '#dpfLrCharge', '#dpfLoad', '#dpfUl', '#dpfHalting'];
+    for (var i = 0; i < dpfFields.length; i++) {
+        if ((parseFloat($(dpfFields[i]).val()) || 0) < 0) {
+            Swal.fire({ icon: 'warning', title: 'Validation', text: 'DPF split amounts cannot be negative.' });
+            $(dpfFields[i]).focus();
+            return false;
+        }
     }
     var lhVal   = parseFloat($('#lh').val()) || 0;
     var supPaid = parseFloat($('#supPaid').val()) || 0;

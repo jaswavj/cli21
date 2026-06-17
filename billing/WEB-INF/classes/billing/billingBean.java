@@ -6766,7 +6766,11 @@ public Vector getLogisticsCustomerList() throws Exception {
  * @param lrNo         LR number
  * @param customerId   customers.id
  * @param destination  destination text
- * @param dpf          DPF amount
+ * @param dpfFreight   DPF freight amount
+ * @param dpfLrCharge  DPF LR charge amount
+ * @param dpfLoad      DPF load amount
+ * @param dpfUl        DPF U/L amount
+ * @param dpfHalting   DPF halting amount
  * @param lh           LH amount
  * @param loadAmt      LOAD amount
  * @param ul           U/L amount
@@ -6777,7 +6781,8 @@ public Vector getLogisticsCustomerList() throws Exception {
 public int saveLogisticsOrder(int supplierId, String lrDate, String lrNo,
                               int customerId, String destination,
                               String vehicleNo, String driverPhone,
-                              double dpf, double lh, double loadAmt,
+                              double dpfFreight, double dpfLrCharge, double dpfLoad, double dpfUl, double dpfHalting,
+                              double lh, double loadAmt,
                               double ul, double hoting, double lc,
                               int supPayType, int supPayMode, double supPaid,
                               int entryUser) throws Exception {
@@ -6792,14 +6797,16 @@ public int saveLogisticsOrder(int supplierId, String lrDate, String lrNo,
         if (supPaid < 0) supPaid = 0;
         double lhBalance = lh - supPaid;
         if (lhBalance < 0) lhBalance = 0;
+        double dpf = dpfFreight + dpfLrCharge + dpfLoad + dpfUl + dpfHalting;
 
         String sql = "INSERT INTO transport_bill_order "
                    + "(supplier_id, lr_date, lr_no, customer_id, destination, "
                    + " vehicle_no, driver_phone, "
-                   + " dpf, lh, load_amt, ul, hoting, lc, "
+               + " dpf, dpf_freight, dpf_lr_charge, dpf_load, dpf_ul, dpf_halting, "
+               + " lh, load_amt, ul, hoting, lc, "
                    + " lh_paid, lh_balance, "
                    + " is_billed, is_active, entry_user, entry_date_time) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, NOW())";
+               + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, NOW())";
 
         ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         ps.setInt(1,    supplierId);
@@ -6810,14 +6817,19 @@ public int saveLogisticsOrder(int supplierId, String lrDate, String lrNo,
         ps.setString(6, vehicleNo  != null ? vehicleNo.trim().toUpperCase()  : null);
         ps.setString(7, driverPhone != null ? driverPhone.trim() : null);
         ps.setDouble(8,  dpf);
-        ps.setDouble(9,  lh);
-        ps.setDouble(10, loadAmt);
-        ps.setDouble(11, ul);
-        ps.setDouble(12, hoting);
-        ps.setDouble(13, lc);
-        ps.setDouble(14, supPaid);
-        ps.setDouble(15, lhBalance);
-        ps.setInt(16,    entryUser);
+        ps.setDouble(9,  dpfFreight);
+        ps.setDouble(10, dpfLrCharge);
+        ps.setDouble(11, dpfLoad);
+        ps.setDouble(12, dpfUl);
+        ps.setDouble(13, dpfHalting);
+        ps.setDouble(14, lh);
+        ps.setDouble(15, loadAmt);
+        ps.setDouble(16, ul);
+        ps.setDouble(17, hoting);
+        ps.setDouble(18, lc);
+        ps.setDouble(19, supPaid);
+        ps.setDouble(20, lhBalance);
+        ps.setInt(21,    entryUser);
         ps.executeUpdate();
 
         rs = ps.getGeneratedKeys();
@@ -6876,7 +6888,8 @@ public boolean checkLrNoExists(String lrNo) throws Exception {
 /**
  * Returns logistics orders between fromDate and toDate (inclusive).
  * Each row: [id, supplier_id, supplier_name, lr_date, lr_no, customer_id, customer_name,
- *            destination, dpf, lh, load_amt, ul, hoting, is_billed]
+ *            destination, dpf, lh, load_amt, ul, hoting, lc, is_billed,
+ *            vehicle_no, driver_phone, dpf_freight, dpf_lr_charge, dpf_load, dpf_ul, dpf_halting]
  */
 public Vector getLogisticsOrderList(String fromDate, String toDate) throws Exception {
     Connection con = null;
@@ -6888,7 +6901,8 @@ public Vector getLogisticsOrderList(String fromDate, String toDate) throws Excep
         String sql = "SELECT l.id, l.supplier_id, IFNULL(s.name,'') AS supplier_name, "
                    + " l.lr_date, l.lr_no, l.customer_id, IFNULL(c.name,'') AS customer_name, "
                    + " l.destination, l.dpf, l.lh, l.load_amt, l.ul, l.hoting, l.lc, l.is_billed, "
-                   + " IFNULL(l.vehicle_no,'') AS vehicle_no, IFNULL(l.driver_phone,'') AS driver_phone "
+                   + " IFNULL(l.vehicle_no,'') AS vehicle_no, IFNULL(l.driver_phone,'') AS driver_phone, "
+                   + " l.dpf_freight, l.dpf_lr_charge, l.dpf_load, l.dpf_ul, l.dpf_halting "
                    + "FROM transport_bill_order l "
                    + "LEFT JOIN prod_supplier s ON s.id = l.supplier_id "
                    + "LEFT JOIN customers c ON c.id = l.customer_id "
@@ -6917,6 +6931,11 @@ public Vector getLogisticsOrderList(String fromDate, String toDate) throws Excep
             row.addElement(rs.getString("is_billed"));
             row.addElement(rs.getString("vehicle_no"));
             row.addElement(rs.getString("driver_phone"));
+            row.addElement(rs.getString("dpf_freight"));
+            row.addElement(rs.getString("dpf_lr_charge"));
+            row.addElement(rs.getString("dpf_load"));
+            row.addElement(rs.getString("dpf_ul"));
+            row.addElement(rs.getString("dpf_halting"));
             vec.addElement(row);
         }
         return vec;
@@ -6932,16 +6951,19 @@ public Vector getLogisticsOrderList(String fromDate, String toDate) throws Excep
  */
 public int updateLogisticsOrder(int id, int supplierId, String lrDate, String lrNo,
                                 int customerId, String destination,
-                                double dpf, double lh, double loadAmt,
+                                double dpfFreight, double dpfLrCharge, double dpfLoad, double dpfUl, double dpfHalting,
+                                double lh, double loadAmt,
                                 double ul, double hoting, double lc) throws Exception {
     Connection con = null;
     PreparedStatement ps = null;
     try {
         con = util.DBConnectionManager.getConnectionFromPool();
         con.setAutoCommit(true);
+        double dpf = dpfFreight + dpfLrCharge + dpfLoad + dpfUl + dpfHalting;
         String sql = "UPDATE transport_bill_order SET "
                    + " supplier_id=?, lr_date=?, lr_no=?, customer_id=?, destination=?, "
-                   + " dpf=?, lh=?, load_amt=?, ul=?, hoting=?, lc=? "
+                   + " dpf=?, dpf_freight=?, dpf_lr_charge=?, dpf_load=?, dpf_ul=?, dpf_halting=?, "
+                   + " lh=?, load_amt=?, ul=?, hoting=?, lc=? "
                    + "WHERE id=? AND is_billed=0 AND is_active=1";
         ps = con.prepareStatement(sql);
         ps.setInt(1,    supplierId);
@@ -6950,12 +6972,17 @@ public int updateLogisticsOrder(int id, int supplierId, String lrDate, String lr
         ps.setInt(4,    customerId);
         ps.setString(5, destination);
         ps.setDouble(6, dpf);
-        ps.setDouble(7, lh);
-        ps.setDouble(8, loadAmt);
-        ps.setDouble(9, ul);
-        ps.setDouble(10, hoting);
-        ps.setDouble(11, lc);
-        ps.setInt(12,   id);
+        ps.setDouble(7, dpfFreight);
+        ps.setDouble(8, dpfLrCharge);
+        ps.setDouble(9, dpfLoad);
+        ps.setDouble(10, dpfUl);
+        ps.setDouble(11, dpfHalting);
+        ps.setDouble(12, lh);
+        ps.setDouble(13, loadAmt);
+        ps.setDouble(14, ul);
+        ps.setDouble(15, hoting);
+        ps.setDouble(16, lc);
+        ps.setInt(17,   id);
         return ps.executeUpdate();
     } finally {
         if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }

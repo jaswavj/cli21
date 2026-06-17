@@ -187,6 +187,11 @@ if (orders.isEmpty()) {
         int    isBilled   = Integer.parseInt(row.get(14).toString());
         String vehicleNo  = row.get(15).toString();
         String driverPh   = row.get(16).toString();
+        double dpfFreight = Double.parseDouble(row.get(17).toString());
+        double dpfLrCharge = Double.parseDouble(row.get(18).toString());
+        double dpfLoad    = Double.parseDouble(row.get(19).toString());
+        double dpfUl      = Double.parseDouble(row.get(20).toString());
+        double dpfHalting = Double.parseDouble(row.get(21).toString());
         double profit     = dpf - (lh + load + ul + lc + hoting);
         double costing    = lh + load + ul + lc + hoting;
         String profitCls  = profit >= 0 ? "profit-pos" : "profit-neg";
@@ -198,6 +203,11 @@ if (orders.isEmpty()) {
         String ulStr      = String.format("%.2f", ul);
         String lcStr      = String.format("%.2f", lc);
         String hotingStr  = String.format("%.2f", hoting);
+        String dpfTip     = "Freight: " + String.format("%.2f", dpfFreight)
+                  + " | LR Charge: " + String.format("%.2f", dpfLrCharge)
+                  + " | Load: " + String.format("%.2f", dpfLoad)
+                  + " | U/L: " + String.format("%.2f", dpfUl)
+                  + " | Halting: " + String.format("%.2f", dpfHalting);
         String badgeCls   = isBilled == 0 ? "badge-unbilled" : "badge-billed";
         String badgeTxt   = isBilled == 0 ? "Unbilled" : "Billed";
         String lrDateDisplay = lrDate;
@@ -218,7 +228,7 @@ if (orders.isEmpty()) {
                         <td class="col-customer"><span class="customer-cell" title="<%=row.get(6).toString()%>"><%=row.get(6).toString()%></span></td>
                         <td class="lrno-cell"><%=row.get(4).toString()%></td>
                         <td><%=row.get(7).toString()%></td>
-                        <td class="tbl-amt"><%=dpfStr%></td>
+                        <td class="tbl-amt" data-bs-toggle="tooltip" data-bs-placement="top" title="<%=dpfTip%>"><%=dpfStr%></td>
                         <td class="tbl-amt"><%=lhStr%></td>
                         <td class="tbl-amt"><%=loadStr%></td>
                         <td class="tbl-amt"><%=ulStr%></td>
@@ -230,7 +240,7 @@ if (orders.isEmpty()) {
                         <td>
 <%  if (isBilled == 0) { %>
                             <button class="btn btn-sm btn-warning"
-                                onclick="showEdit('<%=id%>','<%=suppId%>','<%=suppName%>','<%=lrDate%>','<%=lrNo%>','<%=custId%>','<%=custName%>','<%=dest%>','<%=dpfStr%>','<%=lhStr%>','<%=loadStr%>','<%=ulStr%>','<%=lcStr%>','<%=hotingStr%>')">
+                                onclick="showEdit('<%=id%>','<%=suppId%>','<%=suppName%>','<%=lrDate%>','<%=lrNo%>','<%=custId%>','<%=custName%>','<%=dest%>','<%=dpfStr%>','<%=lhStr%>','<%=loadStr%>','<%=ulStr%>','<%=lcStr%>','<%=hotingStr%>','<%=String.format("%.2f", dpfFreight)%>','<%=String.format("%.2f", dpfLrCharge)%>','<%=String.format("%.2f", dpfLoad)%>','<%=String.format("%.2f", dpfUl)%>','<%=String.format("%.2f", dpfHalting)%>')">
                                 <i class="fas fa-pen"></i> Edit
                             </button><%  } else { %>
 <%
@@ -310,9 +320,29 @@ if (orders.isEmpty()) {
         <div class="card p-3 bg-light border">
           <h6 class="fw-bold mb-3"><i class="fa-solid fa-indian-rupee-sign me-1"></i>Amount Details</h6>
           <div class="row g-3">
-            <div class="col-6 col-md-4">
-              <label class="form-label fw-semibold">DPF</label>
-              <input type="number" step="0.01" min="0" id="m_dpf" class="form-control fg-inp m-amt" placeholder="0.00">
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold" id="m_dpfLabel" title="Freight: 0.00 | LR Charge: 0.00 | Load: 0.00 | U/L: 0.00 | Halting: 0.00">DPF</label>
+                            <input type="number" step="0.01" min="0" id="m_dpf" class="form-control fg-inp" placeholder="0.00" readonly>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">Freight</label>
+                            <input type="number" step="0.01" min="0" id="m_dpfFreight" class="form-control fg-inp m-amt" placeholder="0.00">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">LR Charge</label>
+                            <input type="number" step="0.01" min="0" id="m_dpfLrCharge" class="form-control fg-inp m-amt" placeholder="0.00">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">Load</label>
+                            <input type="number" step="0.01" min="0" id="m_dpfLoad" class="form-control fg-inp m-amt" placeholder="0.00">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">U/L</label>
+                            <input type="number" step="0.01" min="0" id="m_dpfUl" class="form-control fg-inp m-amt" placeholder="0.00">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold">Halting</label>
+                            <input type="number" step="0.01" min="0" id="m_dpfHalting" class="form-control fg-inp m-amt" placeholder="0.00">
             </div>
             <div class="col-6 col-md-4">
               <label class="form-label fw-semibold">LH</label>
@@ -485,7 +515,7 @@ $(function() {
     });
 });
 
-function showEdit(id, suppId, suppName, lrDate, lrNo, custId, custName, dest, dpf, lh, load, ul, lc, hoting) {
+function showEdit(id, suppId, suppName, lrDate, lrNo, custId, custName, dest, dpf, lh, load, ul, lc, hoting, dpfFreight, dpfLrCharge, dpfLoad, dpfUl, dpfHalting) {
     $('#btnCancelOrder').data('id', id).data('lrno', lrNo);
     $('#m_id').val(id);
     $('#m_supplierId').val(suppId);
@@ -495,7 +525,11 @@ function showEdit(id, suppId, suppName, lrDate, lrNo, custId, custName, dest, dp
     $('#m_customerId').val(custId);
     $('#m_customerName').val(custName);
     $('#m_destination').val(dest);
-    $('#m_dpf').val(dpf);
+    $('#m_dpfFreight').val(dpfFreight);
+    $('#m_dpfLrCharge').val(dpfLrCharge);
+    $('#m_dpfLoad').val(dpfLoad);
+    $('#m_dpfUl').val(dpfUl);
+    $('#m_dpfHalting').val(dpfHalting);
     $('#m_lh').val(lh);
     $('#m_loadAmt').val(load);
     $('#m_ul').val(ul);
@@ -508,12 +542,24 @@ function showEdit(id, suppId, suppName, lrDate, lrNo, custId, custName, dest, dp
 }
 
 function calcModalProfit() {
-    var dpf    = parseFloat($('#m_dpf').val())    || 0;
+    var freight = parseFloat($('#m_dpfFreight').val())  || 0;
+    var lrCharge = parseFloat($('#m_dpfLrCharge').val()) || 0;
+    var loadDp   = parseFloat($('#m_dpfLoad').val())     || 0;
+    var ulDp     = parseFloat($('#m_dpfUl').val())       || 0;
+    var halting  = parseFloat($('#m_dpfHalting').val())  || 0;
+    var dpf      = freight + lrCharge + loadDp + ulDp + halting;
     var lh     = parseFloat($('#m_lh').val())     || 0;
     var load   = parseFloat($('#m_loadAmt').val())|| 0;
     var ul     = parseFloat($('#m_ul').val())     || 0;
     var lc     = parseFloat($('#m_lc').val())     || 0;
     var hoting = parseFloat($('#m_hoting').val()) || 0;
+    var dpfTip = 'Freight: ' + freight.toFixed(2)
+        + ' | LR Charge: ' + lrCharge.toFixed(2)
+        + ' | Load: ' + loadDp.toFixed(2)
+        + ' | U/L: ' + ulDp.toFixed(2)
+        + ' | Halting: ' + halting.toFixed(2);
+    $('#m_dpf').val(dpf.toFixed(2)).attr('title', dpfTip);
+    $('#m_dpfLabel').attr('title', dpfTip);
     var profit = dpf - (lh + load + ul + lc + hoting);
     $('#m_profit').val(profit.toFixed(2));
     var color = profit > 0 ? '#198754' : (profit < 0 ? '#dc3545' : '');
@@ -555,7 +601,11 @@ function saveEdit() {
         lrNo:        lrNo,
         customerId:  customerId,
         destination: destination,
-        dpf:         $('#m_dpf').val()    || 0,
+        dpfFreight:  $('#m_dpfFreight').val()  || 0,
+        dpfLrCharge: $('#m_dpfLrCharge').val() || 0,
+        dpfLoad:     $('#m_dpfLoad').val()     || 0,
+        dpfUl:       $('#m_dpfUl').val()       || 0,
+        dpfHalting:  $('#m_dpfHalting').val()  || 0,
         lh:          $('#m_lh').val()     || 0,
         loadAmt:     $('#m_loadAmt').val()|| 0,
         ul:          $('#m_ul').val()     || 0,
