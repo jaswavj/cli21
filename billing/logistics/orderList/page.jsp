@@ -136,6 +136,9 @@ String type = request.getParameter("type");
             <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Orders
                 <span class="badge bg-secondary ms-2"><%=orders.size()%></span>
             </h5>
+            <button type="button" class="bb bb-success" onclick="downloadOrderExcel()">
+                <i class="fa-solid fa-file-excel me-1"></i>Download Excel
+            </button>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -670,7 +673,7 @@ function showBillModal(lrId, lrNo, billId) {
     _bm_lrId   = lrId;
     $('#bm_lrNo').text(lrNo);
     $('#bmBtnCancelBill').data('billid', billId);
-    $('#bmBtnPrint').attr('href', contextPath + '/logistics/transportBill/print.jsp?billId=' + billId);
+    $('#bmBtnPrint').attr('href', contextPath + '/logistics/transportBill/print.jsp?billId=' + billId + '&source=orderList');
     $('#billModalBody').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
     var modal = new bootstrap.Modal(document.getElementById('billModal'));
     modal.show();
@@ -858,6 +861,59 @@ function cancelOrder(id, lrNo) {
             });
         }
     });
+}
+
+function downloadOrderExcel() {
+    var table = document.getElementById('orderTable');
+    if (!table) return;
+
+    var excludeIndexes = [];
+    var headCells = table.querySelectorAll('thead th');
+    headCells.forEach(function(th, idx) {
+        var txt = (th.textContent || '').trim().toLowerCase();
+        if (txt === 'action') excludeIndexes.push(idx);
+    });
+
+    var lines = [];
+
+    // Header row
+    var headerRow = [];
+    headCells.forEach(function(th, idx) {
+        if (excludeIndexes.indexOf(idx) !== -1) return;
+        headerRow.push(csvCell(th.textContent));
+    });
+    lines.push(headerRow.join(','));
+
+    // Export only visible data rows (respects filters)
+    var visibleRows = table.querySelectorAll('tbody tr.view-row');
+    visibleRows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var rowCells = row.querySelectorAll('td');
+        var values = [];
+        rowCells.forEach(function(td, idx) {
+            if (excludeIndexes.indexOf(idx) !== -1) return;
+            values.push(csvCell(td.innerText));
+        });
+        if (values.length) lines.push(values.join(','));
+    });
+
+    var csv = '\uFEFF' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var fromDate = '<%=fromDate%>';
+    var toDate = '<%=toDate%>';
+    a.href = url;
+    a.download = 'order-list-' + fromDate + '-to-' + toDate + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+    var text = (value || '').toString().replace(/\r?\n|\r/g, ' ').trim();
+    return '"' + text.replace(/"/g, '""') + '"';
 }
 </script>
 </body>

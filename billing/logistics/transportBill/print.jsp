@@ -39,6 +39,16 @@ java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Loc
 nf.setMinimumFractionDigits(2); nf.setMaximumFractionDigits(2);
 
 String contextPath = request.getContextPath();
+String source = request.getParameter("source");
+String referer = request.getHeader("Referer");
+String copyLabel = "Original";
+if (source != null && source.equalsIgnoreCase("orderList")) {
+    copyLabel = "Duplicate";
+} else if (source == null || source.trim().isEmpty()) {
+    if (referer != null && referer.contains("/logistics/orderList/")) {
+        copyLabel = "Duplicate";
+    }
+}
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,27 +110,33 @@ String contextPath = request.getContextPath();
         line-height: 1.25;
     }
     .co-gstin-row {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
+        position: relative;
+        display: flex;
         align-items: center;
+        justify-content: flex-end;
+        min-height: 42px;
         margin-bottom: 4px;
     }
     .co-devotion {
-        grid-column: 1 / 3;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
         display: flex;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: center;
         gap: 6px;
-        padding-left: 290px;
+        padding-left: 0;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        min-width: 0;
     }
     .co-gstin-right {
-        grid-column: 3;
-        justify-self: end;
         font-size: 10px;
         font-weight: 600;
         color: #fff;
         letter-spacing: .15px;
         white-space: nowrap;
+        flex-shrink: 0;
     }
     .co-gstin-pill {
         background: rgba(255,255,255,.15);
@@ -129,12 +145,25 @@ String contextPath = request.getContextPath();
         font-size: 10px; font-weight: 700; color: #fff;
         letter-spacing: 0.3px;
     }
-    .dev-trident {
-        width: 14px;
-        height: 20px;
+    .dev-soolam-wrap {
+        width: 24px;
+        height: 42px;
+        display: inline-flex;
+        align-items: flex-start;
+        justify-content: center;
+        overflow: hidden;
+        margin-right: 4px;
+        flex-shrink: 0;
+    }
+    .dev-soolam {
+        width: 44px;
+        height: 44px;
         display: inline-block;
         vertical-align: middle;
-        margin-right: 2px;
+        object-fit: cover;
+        object-position: center 8%;
+        transform: scale(2.5);
+        transform-origin: center top;
     }
     .dev-swastik {
         color: #2d8f2d;
@@ -148,6 +177,7 @@ String contextPath = request.getContextPath();
         font-weight: 500;
         letter-spacing: 0;
         line-height: 1;
+        white-space: nowrap;
     }
     .dev-win {
         color: #ffffff;
@@ -155,6 +185,7 @@ String contextPath = request.getContextPath();
         font-weight: 500;
         letter-spacing: 0;
         line-height: 1;
+        white-space: nowrap;
     }
     .header-divider {
         height: 3px;
@@ -165,6 +196,7 @@ String contextPath = request.getContextPath();
 
     /* ── Title bar ── */
     .title-bar {
+        position: relative;
         text-align: center;
         font-size: 16px;
         font-weight: 900;
@@ -175,7 +207,17 @@ String contextPath = request.getContextPath();
         text-transform: uppercase; color: #0a1f44;
         width: 100%;
     }
-    .original-tag { text-align: right; font-size: 12px; font-style: italic; color: #555; margin-bottom: 4px; }
+    .title-copy-tag {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        font-style: italic;
+        font-weight: 600;
+        color: #555;
+        text-transform: none;
+    }
 
     /* ── Two-column info section ── */
     .info-grid { display: flex; gap: 0; border: 1px solid #000; margin-bottom: 0; }
@@ -224,12 +266,12 @@ String contextPath = request.getContextPath();
 
     /* ── Footer ── */
     .footer-row { display: flex; margin-top: 0; border: 1px solid #000; }
-    .footer-bank { flex: 1; padding: 12px 10px; border-right: 1px solid #000; }
+    .footer-bank { flex: 0 0 60%; width: 60%; padding: 12px 10px; border-right: 1px solid #000; }
     .footer-bank .fb-title { font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
     .footer-bank .fb-row { display: flex; gap: 4px; margin-bottom: 2px; }
     .footer-bank .fb-lbl { font-size: 12px; color: #444; min-width: 70px; }
     .footer-bank .fb-val { font-size: 12px; font-weight: 700; }
-    .footer-sign { width: 200px; padding: 12px 10px; text-align: center; }
+    .footer-sign { flex: 0 0 40%; width: 40%; padding: 12px 10px; text-align: center; }
     .footer-sign .sign-title { font-size: 13px; font-weight: 700; margin-bottom: 46px; }
     .footer-sign .sign-line { border-top: 1px solid #000; font-size: 12px; font-weight: 700; padding-top: 3px; }
 
@@ -240,15 +282,26 @@ String contextPath = request.getContextPath();
     .print-note { text-align: center; font-size: 12px; color: #666; border: 1px solid #000; border-top: none; padding: 3px; margin-top: 0; }
 
     @media print {
-        @page { size: A4; margin: 10mm; }
-        body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        @page { size: A4; margin: 0; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
         .no-print { display: none !important; }
         .page {
             width: 100%;
-            padding: 0;
-            min-height: calc(297mm - 20mm);
+            margin: 0;
+            padding: 0 10mm 3mm;
+            min-height: calc(297mm - 3mm);
             display: flex;
             flex-direction: column;
+        }
+        .print-header,
+        .header-divider {
+            margin-left: -10mm;
+            margin-right: -10mm;
         }
         .print-spacer {
             display: block;
@@ -275,16 +328,13 @@ String contextPath = request.getContextPath();
 
 <div class="page">
 
-    <!-- ── ORIGINAL tag ── -->
-    <!--div class="original-tag">Original</div-->
-
     <!-- ── Header ── -->
     <div class="print-header">
         <div class="co-gstin-row">
             <div class="co-devotion">
-                <svg class="dev-trident" viewBox="0 0 28 40" aria-hidden="true">
-                    <path d="M13 2h2v12h4l2-6h2v9h-7v20h-4V17H5V8h2l2 6h4z" fill="#e10606"/>
-                </svg>
+                <span class="dev-soolam-wrap">
+                    <img class="dev-soolam" src="soolam1.png" alt="Soolam" onerror="this.onerror=null;this.src='<%= contextPath %>/logistics/transportBill/soolam1.png';">
+                </span>
                 <span class="dev-swastik">&#x5350;</span>
                 <span class="dev-text">GOD'S GRACE</span>
                 <span class="dev-swastik">&#x5350;</span>
@@ -316,6 +366,7 @@ String contextPath = request.getContextPath();
     <!-- ── Title ── -->
     <div class="title-bar">
         Transportation Bill
+        <span class="title-copy-tag"><%= copyLabel %></span>
     </div>
 
     <!-- ── Info grid ── -->
@@ -439,7 +490,7 @@ String contextPath = request.getContextPath();
         <tr class="total-row">
             <td colspan="5" style="text-align:right;padding-right:8px;">
                 Total
-                <div class="total-lr-count">TOTAL LR's = <%= String.format("%02d", lrList.size()) %> No's ONLY.</div>
+                
             </td>
             <td class="td-amount"><%= nf.format(runningTotal) %></td>
         </tr>

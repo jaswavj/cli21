@@ -1028,9 +1028,7 @@ function saveBill() {
             const qty        = $(this).find('.inp-qty').val()         || '';
             const rateWt     = $(this).find('.inp-rate').val()        || '';
             const amount     = parseFloat($(this).find('.inp-amount').val()) || 0;
-            if (particular.trim() || amount > 0) {
-                parts.push({ lrNo, particular, qty, rateWt, amount });
-            }
+            parts.push({ lrNo, particular, qty, rateWt, amount });
         });
         return {
             lrId:   parseInt(lrId),
@@ -1074,7 +1072,7 @@ function saveBill() {
                     confirmButtonColor: '#198754'
                 }).then(r => {
                     if (r.isConfirmed) {
-                        window.open(contextPath + '/logistics/transportBill/print.jsp?billId=' + res.billId, '_blank');
+                        window.open(contextPath + '/logistics/transportBill/print.jsp?billId=' + res.billId + '&source=transportBill', '_blank');
                     }
                     resetAll(true);
                 });
