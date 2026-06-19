@@ -148,9 +148,14 @@ for (int i = 0; i < reportRows.size(); i++) {
 <%-- ── DATE RANGE RESULTS ────────────────────────────────────── --%>
 <% if ("range".equals(viewMode)) { %>
     <div class="card mst-card mb-2">
-        <div class="card-body py-2 px-3 d-flex align-items-center gap-4">
-            <span class="fw-semibold">Payments: <span class="badge bg-secondary"><%=reportRows.size()%></span></span>
-            <span class="fw-semibold text-success">Total Paid: <strong>&#8377;<%=String.format("%,.2f",reportTotal)%></strong></span>
+        <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-4">
+                <span class="fw-semibold">Payments: <span class="badge bg-secondary"><%=reportRows.size()%></span></span>
+                <span class="fw-semibold text-success">Total Paid: <strong>&#8377;<%=String.format("%,.2f",reportTotal)%></strong></span>
+            </div>
+            <button class="btn btn-sm btn-success" onclick="exportToCsv()">
+                <i class="fas fa-download me-1"></i>Download CSV
+            </button>
         </div>
     </div>
     <div class="card mst-card">
@@ -405,6 +410,58 @@ function validateSup() {
         return false;
     }
     return true;
+}
+
+function exportToCsv() {
+    var table = document.querySelector('table.table');
+    if (!table) return;
+
+    var excludeIndexes = [];
+    var headCells = table.querySelectorAll('thead th');
+    headCells.forEach(function(th, idx) {
+        var txt = (th.textContent || '').trim().toLowerCase();
+        if (txt === 'detail' || txt === 'action') excludeIndexes.push(idx);
+    });
+
+    var lines = [];
+
+    // Header row
+    var headerRow = [];
+    headCells.forEach(function(th, idx) {
+        if (excludeIndexes.indexOf(idx) !== -1) return;
+        headerRow.push(csvCell(th.textContent));
+    });
+    lines.push(headerRow.join(','));
+
+    // Data rows
+    var dataRows = table.querySelectorAll('tbody tr');
+    dataRows.forEach(function(row) {
+        var rowCells = row.querySelectorAll('td');
+        var values = [];
+        rowCells.forEach(function(td, idx) {
+            if (excludeIndexes.indexOf(idx) !== -1) return;
+            values.push(csvCell(td.innerText));
+        });
+        if (values.length) lines.push(values.join(','));
+    });
+
+    var csv = '\uFEFF' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var fromDate = '<%=fromDate%>';
+    var toDate = '<%=toDate%>';
+    a.href = url;
+    a.download = 'supplier-payment-report-' + fromDate + '-to-' + toDate + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+    var text = (value || '').toString().replace(/\r?\n|\r/g, ' ').trim();
+    return '"' + text.replace(/"/g, '""') + '"';
 }
 </script>
 </body>

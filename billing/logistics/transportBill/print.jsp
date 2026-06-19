@@ -43,10 +43,10 @@ String source = request.getParameter("source");
 String referer = request.getHeader("Referer");
 String copyLabel = "Original";
 if (source != null && source.equalsIgnoreCase("orderList")) {
-    copyLabel = "Duplicate";
+    copyLabel = "Original";
 } else if (source == null || source.trim().isEmpty()) {
     if (referer != null && referer.contains("/logistics/orderList/")) {
-        copyLabel = "Duplicate";
+        copyLabel = "Original";
     }
 }
 %>
@@ -71,30 +71,73 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         padding: 9px 14px 11px;
         margin-bottom: 4px;
         border-top: 2px solid rgba(255,255,255,.8);
+        position: relative;
+        overflow: hidden;
+    }
+    .print-header::after {
+        content: '';
+        position: absolute;
+        top: -14px;
+        bottom: -14px;
+        left: calc(20% + 4px);
+        width: 54px;
+        background: url('first.png') no-repeat center center;
+        background-size: 100% 100%;
+        transform: rotate(-5deg);
+        transform-origin: center center;
+        filter: drop-shadow(-2px 0 0 rgba(8, 54, 14, 0.45)) drop-shadow(-6px 6px 8px rgba(0,0,0,0.22));
+        pointer-events: none;
+        z-index: 1;
     }
     .header-main {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 0;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+        z-index: 2;
+    }
+    
+    .logo-wrap {
+        width: 20%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-right: 12px;
     }
     .logo-wrap img {
-        width: 146px;
-        height: 86px;
+        width: 100%;
+        max-width: 146px;
+        height: auto;
         object-fit: contain;
         border-radius: 2px;
         filter: brightness(0) invert(1);
     }
     .logo-wrap .no-logo {
-        width: 146px; height: 86px; display:flex; align-items:center; justify-content:center;
+        width: 100%; max-width: 146px; aspect-ratio: 1.7;
+        display:flex; align-items:center; justify-content:center;
         background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.3);
         font-size:11px; color:rgba(255,255,255,.7); border-radius:4px;
+    }
+    .header-content {
+        flex: 1;
+        width: 80%;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        padding-left: 20px;
     }
     .co-block {
         flex: 1;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
     .co-name {
-        font-size: 31px; font-weight: 800; letter-spacing: .5px;
+        font-size: 28px; font-weight: 800; letter-spacing: 2px;
         text-transform: uppercase; color: #fff;
         text-shadow: 0 1px 4px rgba(0,0,0,.35);
         line-height: 1.05;
@@ -102,39 +145,41 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         text-align: center;
     }
     .co-sub  {
-        font-size: 14px;
+        font-size: 13px;
         color: #ffffff;
-        margin-top: 4px;
+        margin-top: 2px;
+        letter-spacing: 1px;
         white-space: pre-wrap;
         text-align: center;
-        line-height: 1.25;
+        line-height: 1.2;
     }
     .co-gstin-row {
         position: relative;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        min-height: 42px;
-        margin-bottom: 4px;
+        justify-content: flex-start;
+        letter-spacing: .7px;
+        width: 100%;
+        padding: 2px 8px;
+        margin-bottom: 1px;
+        gap: 12px;
     }
     .co-devotion {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        padding-left: 0;
         flex-wrap: nowrap;
         white-space: nowrap;
+        flex-shrink: 0;
         min-width: 0;
+        margin-bottom: 2px;
     }
     .co-gstin-right {
         font-size: 10px;
         font-weight: 600;
         color: #fff;
-        letter-spacing: .15px;
+        letter-spacing: .25px;
         white-space: nowrap;
         flex-shrink: 0;
     }
@@ -156,13 +201,13 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         flex-shrink: 0;
     }
     .dev-soolam {
-        width: 44px;
-        height: 44px;
+        width: 34px;
+        height: 34px;
         display: inline-block;
         vertical-align: middle;
         object-fit: cover;
         object-position: center 8%;
-        transform: scale(2.5);
+        transform: scale(1.9);
         transform-origin: center top;
     }
     .dev-swastik {
@@ -175,7 +220,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         color: #ffffff;
         font-size: 11px;
         font-weight: 500;
-        letter-spacing: 0;
+        letter-spacing: .7px;
         line-height: 1;
         white-space: nowrap;
     }
@@ -183,7 +228,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         color: #ffffff;
         font-size: 11px;
         font-weight: 500;
-        letter-spacing: 0;
+        letter-spacing: .7px;
         line-height: 1;
         white-space: nowrap;
     }
@@ -330,39 +375,38 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
 
     <!-- ── Header ── -->
     <div class="print-header">
-        <div class="co-gstin-row">
-            <div class="co-devotion">
-                <span class="dev-soolam-wrap">
-                    <img class="dev-soolam" src="soolam1.png" alt="Soolam" onerror="this.onerror=null;this.src='<%= contextPath %>/logistics/transportBill/soolam1.png';">
-                </span>
-                <span class="dev-swastik">&#x5350;</span>
-                <span class="dev-text">GOD'S GRACE</span>
-                <span class="dev-swastik">&#x5350;</span>
-                <span class="dev-win">WIN WIN</span>
-            </div>
-            <% if (!co.get(2).toString().isEmpty()) { %>
-            <div class="co-gstin-right">GSTIN: <%= co.get(2) %></div>
-            <% } %>
-        </div>
         <div class="header-main">
-        <div class="logo-wrap">
-            <%
-            String logoPath = application.getRealPath("/logistics/transportBill/logo.png");
-            java.io.File logoFile = new java.io.File(logoPath);
-            if (logoFile.exists()) { %>
-                <img src="<%= contextPath %>/logistics/transportBill/logo.png" alt="Logo">
-            <% } else { %>
-                <div class="no-logo">LOGO</div>
-            <% } %>
-        </div>
-        <div class="co-block">
-            <div class="co-name"><%= co.get(0) %></div>
-            <div class="co-sub"><%= co.get(1) %></div>
-        </div>
+            <div class="logo-wrap">
+                <%
+                String logoPath = application.getRealPath("/logistics/transportBill/logo.png");
+                java.io.File logoFile = new java.io.File(logoPath);
+                if (logoFile.exists()) { %>
+                    <img src="<%= contextPath %>/logistics/transportBill/logo.png" alt="Logo">
+                <% } else { %>
+                    <div class="no-logo">LOGO</div>
+                <% } %>
+            </div>
+            <div class="header-content">
+                <div class="co-block">
+                    <div class="co-devotion">
+                        <span class="dev-soolam-wrap">
+                            <img class="dev-soolam" src="soolam2.png" alt="Soolam" onerror="this.onerror=null;this.src='<%= contextPath %>/logistics/transportBill/soolam1.png';">
+                        </span>
+                        <span class="dev-swastik">&#x5350;</span>
+                        <span class="dev-text">GOD'S GRACE</span>
+                        <span class="dev-swastik">&#x5350;</span>
+                        <span class="dev-win">WIN WIN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <% if (!co.get(2).toString().isEmpty()) { %>
+                        <span class="co-gstin-right" style="margin-left:14px;">GSTIN: <%= co.get(2) %></span>
+                        <% } %>
+                    </div>
+                    <div class="co-name"><%= co.get(0) %></div>
+                    <div class="co-sub"><%= co.get(1) %></div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="header-divider"></div>
-
     <!-- ── Title ── -->
     <div class="title-bar">
         Transportation Bill

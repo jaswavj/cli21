@@ -7136,16 +7136,36 @@ public String saveTransportBill(
         con = util.DBConnectionManager.getConnectionFromPool();
         con.setAutoCommit(false);
 
-        // Generate invoice_no: YY-count (e.g. 26-1, 26-2)
+        // Generate invoice_no: XXX-YYYY/YY format (e.g. 001-2026/27, 002-2026/27)
+        // Financial year: April 1 to March 31
         java.util.Calendar cal = java.util.Calendar.getInstance();
-        int year = cal.get(java.util.Calendar.YEAR) % 100;
+        int currentYear = cal.get(java.util.Calendar.YEAR);
+        int currentMonth = cal.get(java.util.Calendar.MONTH) + 1; // 1-12
+        
+        // Calculate financial year start and end
+        int fyStartYear, fyEndYear;
+        if (currentMonth >= 4) { // April onwards = same year start
+            fyStartYear = currentYear;
+            fyEndYear = currentYear + 1;
+        } else { // Before April = previous year start
+            fyStartYear = currentYear - 1;
+            fyEndYear = currentYear;
+        }
+        String financialYear = fyStartYear + "/" + (fyEndYear % 100);
+        
+        // Count bills in current financial year (April-March)
         ps = con.prepareStatement(
-            "SELECT COUNT(id) AS cnt FROM transport_bill WHERE YEAR(bill_date)=YEAR(CURDATE())");
+            "SELECT COUNT(id) AS cnt FROM transport_bill WHERE " +
+            "((YEAR(bill_date) = ? AND MONTH(bill_date) >= 4) OR " +
+            "(YEAR(bill_date) = ? AND MONTH(bill_date) < 4))");
+        ps.setInt(1, fyStartYear);
+        ps.setInt(2, fyEndYear);
         rs = ps.executeQuery();
-        int nextCount = 1;
-        if (rs.next()) nextCount = rs.getInt("cnt") + 1;
+        int legacyBillOffset = 122; // Old software had 122 bills, start from 123
+        int nextCount = 1 + legacyBillOffset;
+        if (rs.next()) nextCount = rs.getInt("cnt") + 1 + legacyBillOffset;
         rs.close(); ps.close();
-        invoiceNo = year + "-" + nextCount;
+        invoiceNo = String.format("%03d-%s", nextCount, financialYear);
 
         String creditDaysText = (creditDays != null) ? creditDays.trim() : "";
         Integer creditDaysInt = null;
