@@ -79,15 +79,42 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         position: absolute;
         top: -14px;
         bottom: -14px;
-        left: calc(20% + 4px);
-        width: 54px;
-        background: url('first.png') no-repeat center center;
-        background-size: 100% 100%;
-        transform: rotate(-5deg);
+        left: calc(20% + 10px);
+        width: 4px;
+        background: linear-gradient(to bottom, #2e7d32 0%, #66bb6a 50%, #2e7d32 100%);
+        transform: rotate(-18deg);
         transform-origin: center center;
-        filter: drop-shadow(-2px 0 0 rgba(8, 54, 14, 0.45)) drop-shadow(-6px 6px 8px rgba(0,0,0,0.22));
+        box-shadow: 0 0 6px rgba(46,125,50,0.7), 0 0 2px rgba(46,125,50,0.9);
+        pointer-events: none;
+        z-index: 3;
+    }
+    /* ── Green corner triangles (top-right) ── */
+    .header-corner-decor {
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 150px;
         pointer-events: none;
         z-index: 1;
+    }
+    .header-corner-decor .ct1 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 150px;
+        background: #1a5e1a;
+        clip-path: polygon(100% 0%, 100% 100%, 50% 100%);
+    }
+    .header-corner-decor .ct2 {
+        position: absolute;
+        top: 0;
+        right: 12px;
+        height: 100%;
+        width: 115px;
+        background: #2e7d32;
+        clip-path: polygon(100% 0%, 100% 100%, 65% 100%);
     }
     .header-main {
         display: flex;
@@ -404,6 +431,10 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
                     <div class="co-sub"><%= co.get(1) %></div>
                 </div>
             </div>
+        </div>
+        <div class="header-corner-decor">
+            <div class="ct1"></div>
+            <div class="ct2"></div>
         </div>
     </div>
     <div class="header-divider"></div>
