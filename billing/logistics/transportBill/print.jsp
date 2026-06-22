@@ -29,7 +29,7 @@ if (result.size() < 4) {
 Vector hdr    = (Vector) result.get(0);
 // [1] lrList: bill_lr_id, logistics_id, lr_no, lr_date, notes, lr_total
 Vector lrList = (Vector) result.get(1);
-// [2] parts:  bill_lr_id, lr_no, particular, qty, rate_wt, amount
+// [2] parts:  bill_lr_id, lr_no, lr_date, particular, qty, rate_wt, amount
 Vector parts  = (Vector) result.get(2);
 // [3] company: shop_name, address, gstin, bank_details
 Vector co     = (Vector) result.get(3);
@@ -467,7 +467,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
                 <span class="inv-val">: <%= hdr.get(0) %></span>
             </div>
             <div class="inv-row">
-                <span class="inv-lbl">Date</span>
+                <span class="inv-lbl">Bill Date</span>
                 <span class="inv-val">: <%= hdr.get(1) %></span>
             </div>
             <div class="inv-row">
@@ -520,14 +520,15 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
                 Vector p = (Vector) parts.get(pi);
                 if (!p.get(0).toString().equals(billLrId)) continue;
                 String rowLrNo    = p.get(1).toString();
-                String particular = p.get(2).toString();
-                String qty        = p.get(3).toString();
-                String rateWt     = p.get(4).toString();
-                double amount     = Double.parseDouble(p.get(5).toString());
+                String rowLrDate  = p.get(2).toString();  // lr_date from transport_bill_details
+                String particular = p.get(3).toString();
+                String qty        = p.get(4).toString();
+                String rateWt     = p.get(5).toString();
+                double amount     = Double.parseDouble(p.get(6).toString());
         %>
             <tr>
                 <td class="td-lr-no"><%= rowLrNo.isEmpty() ? (firstRow ? lrNo : "") : rowLrNo %></td>
-                <td class="td-date"><% if (firstRow) { %><%= lrDate %><% } %></td>
+                <td class="td-date"><%= rowLrDate.isEmpty() ? (firstRow ? lrDate : "") : rowLrDate %></td>
                 <td><%= particular %></td>
                 <td class="td-qty"><%= qty %></td>
                 <td class="td-rate"><%= rateWt %></td>

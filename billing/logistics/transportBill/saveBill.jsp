@@ -25,6 +25,7 @@ try {
     JsonObject obj     = parser.parse(json).getAsJsonObject();
 
     int    customerId  = obj.get("customerId").getAsInt();
+    String billDate    = obj.has("billDate")  ? obj.get("billDate").getAsString()  : "";
     String poNo        = obj.has("poNo")      ? obj.get("poNo").getAsString()      : "";
     String sacCode     = obj.has("sacCode")   ? obj.get("sacCode").getAsString()   : "";
     double grandTotal  = obj.get("grandTotal").getAsDouble();
@@ -50,6 +51,7 @@ try {
 
     String[] particulars = new String[totalParts];
     String[] detailLrNos = new String[totalParts];
+    String[] lrDates     = new String[totalParts];
     String[] quantities  = new String[totalParts];
     String[] rateWts     = new String[totalParts];
     double[] amounts     = new double[totalParts];
@@ -65,6 +67,7 @@ try {
         for (int j = 0; j < parts.size(); j++) {
             JsonObject p      = parts.get(j).getAsJsonObject();
             detailLrNos[partIdx] = p.has("lrNo")       ? p.get("lrNo").getAsString()       : "";
+            lrDates[partIdx]     = p.has("lrDate")     ? p.get("lrDate").getAsString()     : "";
             particulars[partIdx] = p.has("particular") ? p.get("particular").getAsString() : "";
             quantities[partIdx]  = p.has("qty")        ? p.get("qty").getAsString()        : "";
             rateWts[partIdx]     = p.has("rateWt")     ? p.get("rateWt").getAsString()     : "";
@@ -75,11 +78,11 @@ try {
 
     // ── Save ──────────────────────────────────────────────────
     String invoiceNo = bill.saveTransportBill(
-        customerId, poNo, sacCode,
+        customerId, billDate, poNo, sacCode,
         grandTotal, paidAmount, balance,
         paymentType, paymentModeInt, creditDays,
         lrIds, lrTotals, lrNotes, lrPartCounts,
-        detailLrNos, particulars, quantities, rateWts, amounts,
+        detailLrNos, lrDates, particulars, quantities, rateWts, amounts,
         userId
     );
 

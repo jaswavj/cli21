@@ -466,6 +466,16 @@ if (userId == null) {
 
                     <div class="pay-fields">
 
+                        <!-- Bill Date -->
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <div class="pay-field-label">
+                                    <i class="fa-solid fa-calendar-days fa-sm"></i> Bill Date
+                                </div>
+                                <input type="date" id="billDate" class="pay-inp" style="font-size:13px;">
+                            </div>
+                        </div>
+
                         <!-- PO No -->
                         <div class="row g-2">
                             <div class="col-12">
@@ -585,6 +595,9 @@ $(document).ready(function() {
     loadUnbilledLRs();
     initLRSearch();
     initCustomerSearch();
+    // Set bill date to today
+    const today = new Date().toISOString().split('T')[0];
+    $('#billDate').val(today);
 });
 
 /* ── LR Search (filtered to selected customer) ── */
@@ -829,6 +842,7 @@ function renderParticularsSection(lr) {
                     <tr>
                         <th style="width:26px;">#</th>
                         <th style="width:120px;">LR No</th>
+                        <th style="width:100px;">LR Date</th>
                         <th>Particular</th>
                         <th style="width:80px;">Qty/Articles</th>
                         <th style="width:90px;">Rate/Wt</th>
@@ -871,8 +885,9 @@ function addParticularsRow(lrId) {
         <tr id="partRow_${lrId}_${rIdx}">
             <td style="text-align:center;color:#6c757d;font-size:11px;" class="row-sno">${$tbody.children().length + 1}</td>
             <td><input type="text"   class="tbl-inp inp-lrno"      placeholder="LR No"></td>
+            <td><input type="date"   class="tbl-inp inp-lrdate"    placeholder="LR Date"></td>
             <td><input type="text"   class="tbl-inp inp-particular" placeholder="Particular…"  oninput="recalcLR(${lrId})"></td>
-            <td><input type="number" class="tbl-inp inp-sm inp-qty"  placeholder="0"    min="0" step="any" oninput="recalcLR(${lrId})"></td>
+            <td><input type="text"   class="tbl-inp inp-sm inp-qty"  placeholder="0"    oninput="recalcLR(${lrId})"></td>
             <td><input type="text"   class="tbl-inp inp-sm inp-rate" placeholder="0/text"       oninput="recalcLR(${lrId})"></td>
             <td><input type="number" class="tbl-inp inp-amount"     placeholder="0.00" min="0" step="any" oninput="recalcLR(${lrId})" id="amtInp_${lrId}_${rIdx}"></td>
             <td>
@@ -1024,11 +1039,12 @@ function saveBill() {
         const parts = [];
         $(`#partBody_${lrId} tr`).each(function() {
             const lrNo       = $(this).find('.inp-lrno').val()        || '';
+            const lrDate     = $(this).find('.inp-lrdate').val()      || '';
             const particular = $(this).find('.inp-particular').val() || '';
             const qty        = $(this).find('.inp-qty').val()         || '';
             const rateWt     = $(this).find('.inp-rate').val()        || '';
             const amount     = parseFloat($(this).find('.inp-amount').val()) || 0;
-            parts.push({ lrNo, particular, qty, rateWt, amount });
+            parts.push({ lrNo, lrDate, particular, qty, rateWt, amount });
         });
         return {
             lrId:   parseInt(lrId),
@@ -1040,6 +1056,7 @@ function saveBill() {
 
     const payload = {
         customerId:   selectedCustomerId,
+        billDate:     $('#billDate').val() || '',
         poNo:         $('#poNo').val().trim(),
         sacCode:      '996791',
         grandTotal,
@@ -1102,6 +1119,9 @@ function resetAll(skipConfirm) {
         $('#creditDaysInp').val('');
         $('#creditDaysWrap').removeClass('visible');
         $('#poNo').val('');
+        // Reset bill date to today
+        const today = new Date().toISOString().split('T')[0];
+        $('#billDate').val(today);
         $('#payTypeGroup .pay-mode-btn').removeClass('active');
         $('#payTypeGroup .pay-mode-btn[data-type="1"]').addClass('active');
         $('#payModeSelect').prop('disabled', true).val('1');

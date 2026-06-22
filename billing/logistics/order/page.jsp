@@ -236,6 +236,22 @@ var lrNoChecked  = false;
 
 $(function() {
 
+    <% if (msg != null && !msg.trim().isEmpty()) { %>
+    (function() {
+        var alertType = '<%= type != null ? type : "info" %>';
+        var alertIcon = 'info';
+        if (alertType === 'success') alertIcon = 'success';
+        else if (alertType === 'danger' || alertType === 'error') alertIcon = 'error';
+        else if (alertType === 'warning') alertIcon = 'warning';
+
+        Swal.fire({
+            icon: alertIcon,
+            title: alertType === 'success' ? 'Success' : 'Notice',
+            text: '<%= msg.replace("'", "\\'") %>'
+        });
+    })();
+    <% } %>
+
     // Supplier autocomplete (AJAX)
     $('#supplierName').autocomplete({
         source: function(request, response) {
