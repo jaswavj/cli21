@@ -16,6 +16,7 @@
     <style>
         .table td, .table th { vertical-align: middle; }
         .btn-edit, .btn-delete { margin: 0 2px; }
+        .address-cell { white-space: pre-line; }
         @media (max-width: 768px) {
             .container { padding-left: 0.5rem; padding-right: 0.5rem; }
         }
@@ -211,11 +212,11 @@ String type = request.getParameter("type");
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Edit</th>
                             <th>Name</th>
                             <th>Phone Number</th>
                             <th>GSTIN</th>
                             <th>Address</th>
-                            <th>Functions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -233,7 +234,7 @@ String type = request.getParameter("type");
                                 String isGstStr =vec1.elementAt(5).toString();
                                 String isEligibleStr =vec1.elementAt(6).toString();
                                 String safeName = Name.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ");
-                                String safeAddress = address.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", "");
+                                String safeAddress = address.replace("\\", "\\\\").replace("'", "\\'").replace("\r", "\\r").replace("\n", "\\n");
                                 String safeGstin = gstin.replace("'", "\\'");
                                 String safePhn = phn.replace("'", "\\'");
 
@@ -241,14 +242,13 @@ String type = request.getParameter("type");
                         %>
                         <tr>
                             <td><%=i+1%></td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-warning btn-edit" onclick="populateForm(<%=id%>, '<%=safeName%>', '<%=safePhn%>', '<%=safeAddress%>', '<%=safeGstin%>', <%=isGstStr%>, <%=isEligibleStr%>)">Edit</button>
+                            </td>
                             <td><%=Name%></td>
                             <td><%=phn%></td>
                             <td><%=gstin%></td>
-                            <td><%=address%></td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline-warning btn-edit" onclick="populateForm(<%=id%>, '<%=safeName%>', '<%=safePhn%>', '<%=safeAddress%>', '<%=safeGstin%>', <%=isGstStr%>, <%=isEligibleStr%>)">Edit</button>
-                                 
-                            </td>
+                            <td class="address-cell"><%=address%></td>
                         </tr>
                         <%
                     }

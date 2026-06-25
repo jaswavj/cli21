@@ -149,7 +149,7 @@ CREATE TABLE `customers` (
 
 insert  into `customers`(`id`,`name`,`phone_number`,`address`,`date`,`time`,`is_eligible_for_commission`,`is_active`,`gstin`,`is_gst`,`salesman`,`area`,`credit_limit`,`local`,`exchange_point`) values 
 (1,'JASWA VIJAY JASWA VIJAY JASWA VIJAY JASWA VIJAY','9597451419','SFASDFSADDFSD \r\nasgsdg \r\nSFSDDSDDGSDG','2026-06-10','21:47:48',0,1,'2112232wfsfffsd',1,NULL,NULL,0.00,1,0.000),
-(2,'jeb','9898989898','','2026-06-10','22:20:38',0,1,'',0,NULL,NULL,0.00,1,0.000),
+(2,'jeb','9898989898','Azhagamman kovil street\r\n Boothapandi nagercoil kanyakumari Tamil nadu -629852','2026-06-10','22:20:38',0,1,'',0,NULL,NULL,0.00,1,0.000),
 (3,'cc','','','2026-06-13','11:13:27',0,1,'',0,NULL,NULL,0.00,1,0.000),
 (4,'TABLET','9856985698','SDSDSD\r\nfDGDFGD','2026-06-13','13:38:44',0,1,'789655452222222',1,NULL,NULL,0.00,1,0.000),
 (5,'swift','','','2026-06-17','10:34:08',0,1,'',0,NULL,NULL,0.00,1,0.000);
@@ -1586,7 +1586,7 @@ CREATE TABLE `transport_bill_order` (
   KEY `idx_supplier_id` (`supplier_id`),
   KEY `idx_customer_id` (`customer_id`),
   KEY `idx_lr_date` (`lr_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `transport_bill_order` */
 
@@ -1600,7 +1600,8 @@ insert  into `transport_bill_order`(`id`,`supplier_id`,`vehicle_no`,`driver_phon
 (7,6,'TN74AY5779','9999999999','2026-06-17','112',5,'ssssss',12500,200,3000,300,4000,5000,10000,0,10000,120,0,0,0,1,1,1,NULL,NULL,'2026-06-17 10:35:23'),
 (8,2,'TN74AY5777','9999999999','2026-06-17','111\r\n11232',2,'ssss',10000,10000,0,0,0,0,5990,0,5990,0,0,0,0,1,1,1,NULL,NULL,'2026-06-17 17:00:14'),
 (9,3,'TNHS','2837376363','2026-06-19','1222',1,'www',1500,1500,0,0,0,0,1400,0,1400,0,0,0,0,1,1,1,NULL,NULL,'2026-06-19 17:15:42'),
-(10,3,'111111111','1111111111111','2026-06-22','sss',4,'aa',1000,1000,0,0,0,0,100,0,100,0,0,0,0,1,1,1,NULL,NULL,'2026-06-22 11:19:56');
+(10,3,'111111111','1111111111111','2026-06-22','sss',4,'aa',1000,1000,0,0,0,0,100,0,100,0,0,0,0,1,1,1,NULL,NULL,'2026-06-22 11:19:56'),
+(11,3,'SSS','22222','2026-06-22','f44',2,'ss',34567,34567,0,0,0,0,2234,0,2234,344,0,0,0,0,1,1,NULL,NULL,'2026-06-22 21:24:21');
 
 /*Table structure for table `transport_bill_payment` */
 
@@ -1639,6 +1640,58 @@ insert  into `transport_bill_payment`(`id`,`bill_id`,`payment_type`,`payment_mod
 (13,10,1,0,0,0,NULL,1,'2026-06-19 17:16:02','2026-06-19 17:16:02'),
 (14,11,1,0,0,0,NULL,1,'2026-06-22 11:26:43','2026-06-22 11:26:43');
 
+/*Table structure for table `transport_lr_copy` */
+
+DROP TABLE IF EXISTS `transport_lr_copy`;
+
+CREATE TABLE `transport_lr_copy` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `lr_no` varchar(20) NOT NULL,
+  `customer_id` int DEFAULT '0',
+  `customer_name` varchar(255) DEFAULT NULL,
+  `phone_number` varchar(30) DEFAULT NULL,
+  `lr_date` date DEFAULT NULL,
+  `truck_no` varchar(100) DEFAULT NULL,
+  `from_location` varchar(255) DEFAULT NULL,
+  `to_location` varchar(255) DEFAULT NULL,
+  `consignee_name` varchar(255) DEFAULT NULL,
+  `no_of_articles` varchar(100) DEFAULT NULL,
+  `description_text` varchar(255) DEFAULT NULL,
+  `weight_mt` varchar(100) DEFAULT NULL,
+  `mode_payment1` varchar(255) DEFAULT NULL,
+  `freight_amount` varchar(100) DEFAULT NULL,
+  `to_pay_amount` varchar(100) DEFAULT NULL,
+  `paid_amount` varchar(100) DEFAULT NULL,
+  `amount_in_words` varchar(500) DEFAULT NULL,
+  `dc_no` varchar(100) DEFAULT NULL,
+  `inv_date` date DEFAULT NULL,
+  `inv_no` varchar(100) DEFAULT NULL,
+  `inv_date2` date DEFAULT NULL,
+  `declared_value_rs` varchar(100) DEFAULT NULL,
+  `pnl_seal_no` varchar(100) DEFAULT NULL,
+  `material_received_date` date DEFAULT NULL,
+  `pnl_no` varchar(100) DEFAULT NULL,
+  `driver_name` varchar(255) DEFAULT NULL,
+  `vehicle_type` varchar(100) DEFAULT NULL,
+  `deliver_in` varchar(50) DEFAULT NULL,
+  `entry_user` int NOT NULL,
+  `entry_date_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `entry_date` date DEFAULT NULL,
+  `is_cancelled` tinyint(1) NOT NULL DEFAULT '0',
+  `cancel_uid` int DEFAULT NULL,
+  `cancel_date_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_lr_copy_lr_no` (`lr_no`),
+  KEY `idx_lr_copy_entry_date` (`entry_date`),
+  KEY `idx_lr_copy_customer_id` (`customer_id`),
+  KEY `idx_lr_copy_cancelled` (`is_cancelled`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+/*Data for the table `transport_lr_copy` */
+
+insert  into `transport_lr_copy`(`id`,`lr_no`,`customer_id`,`customer_name`,`phone_number`,`lr_date`,`truck_no`,`from_location`,`to_location`,`consignee_name`,`no_of_articles`,`description_text`,`weight_mt`,`mode_payment1`,`freight_amount`,`to_pay_amount`,`paid_amount`,`amount_in_words`,`dc_no`,`inv_date`,`inv_no`,`inv_date2`,`declared_value_rs`,`pnl_seal_no`,`material_received_date`,`pnl_no`,`driver_name`,`vehicle_type`,`deliver_in`,`entry_user`,`entry_date_time`,`entry_date`,`is_cancelled`,`cancel_uid`,`cancel_date_time`) values 
+(1,'0001',1,'JASWA VIJAY JASWA VIJAY JASWA VIJAY JASWA VIJAY','9597451419','2026-06-25','sss','sdd','ff','jeb','12','ddd','23','ddd','334','34','44','sdsd','dsds','2026-06-25','sd','2026-06-25','ew','ds','2026-07-01','ds','dddd','dffd','Door delivery',1,'2026-06-25 22:09:46','2026-06-25',0,NULL,NULL);
+
 /*Table structure for table `transport_supplier_payment` */
 
 DROP TABLE IF EXISTS `transport_supplier_payment`;
@@ -1671,7 +1724,7 @@ CREATE TABLE `user_modules` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `module_name` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=latin1;
 
 /*Data for the table `user_modules` */
 
@@ -1685,7 +1738,8 @@ insert  into `user_modules`(`id`,`module_name`) values
 (7,'Supplier collection Report'),
 (8,'Profit Report'),
 (9,'Master'),
-(10,'Admin');
+(10,'Admin'),
+(12,'LR Copy');
 
 /*Table structure for table `user_permission` */
 
@@ -1700,21 +1754,22 @@ CREATE TABLE `user_permission` (
   PRIMARY KEY (`id`),
   KEY `mod` (`module_id`),
   KEY `uid` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=123 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=134 DEFAULT CHARSET=latin1;
 
 /*Data for the table `user_permission` */
 
 insert  into `user_permission`(`id`,`module_id`,`uid`,`date`,`time`) values 
-(70,1,1,'2025-09-19','11:43:23'),
-(71,2,1,'2025-09-19','11:43:23'),
-(72,3,1,'2025-09-19','11:43:23'),
-(73,4,1,'2025-09-19','11:43:23'),
-(74,5,1,'2025-09-19','11:43:23'),
-(75,6,1,'2025-09-19','11:43:23'),
-(76,7,1,'2025-09-19','11:43:23'),
-(77,8,1,'2025-09-19','11:43:23'),
-(121,9,1,'2025-09-19','11:43:23'),
-(122,10,1,'2025-09-19','11:43:23');
+(123,1,1,'2026-06-25','22:41:28'),
+(124,2,1,'2026-06-25','22:41:28'),
+(125,3,1,'2026-06-25','22:41:28'),
+(126,4,1,'2026-06-25','22:41:28'),
+(127,5,1,'2026-06-25','22:41:28'),
+(128,6,1,'2026-06-25','22:41:28'),
+(129,7,1,'2026-06-25','22:41:28'),
+(130,8,1,'2026-06-25','22:41:28'),
+(131,9,1,'2026-06-25','22:41:28'),
+(132,10,1,'2026-06-25','22:41:28'),
+(133,12,1,'2026-06-25','22:41:28');
 
 /*Table structure for table `user_special_permission` */
 

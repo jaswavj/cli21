@@ -135,6 +135,19 @@ for (int i = 0; i < vecPer.size(); i++) {
       <span>Profit Report</span>
     </a>
 <% } %>
+<% if (permissions.contains(12)) { %>
+<div class="sidebar-dropdown">
+  <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#logisticsToolsMenu">
+    <i class="fa-solid fa-route"></i>
+    <span>LR Copy</span>
+    <i class="fas fa-chevron-down ms-auto"></i>
+  </a>
+  <div class="collapse sidebar-submenu" id="logisticsToolsMenu">
+    <a href="<%=request.getContextPath()%>/logistics/LR/page.jsp" class="sidebar-subitem">Prepare LR</a>
+    <a href="<%=request.getContextPath()%>/logistics/LR/report.jsp" class="sidebar-subitem">LR Report</a>
+  </div>
+</div>
+<% } %>
 <% if (permissions.contains(9)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#productMenu">

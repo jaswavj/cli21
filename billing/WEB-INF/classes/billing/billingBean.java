@@ -6759,6 +6759,408 @@ public Vector getLogisticsCustomerList() throws Exception {
 }
 
 /**
+ * Returns active customers for LR copy autocomplete.
+ * Each row: [id, name, phone_number]
+ */
+public Vector getLrCopyCustomerAutocomplete(String term) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT id, name, IFNULL(phone_number,'') AS phone_number "
+          + "FROM customers "
+          + "WHERE is_active = 1 AND name LIKE ? "
+          + "ORDER BY name LIMIT 20");
+        ps.setString(1, "%" + (term == null ? "" : term.trim()) + "%");
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString("id"));
+            row.addElement(rs.getString("name"));
+            row.addElement(rs.getString("phone_number"));
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Generates next LR number in FY format: 0001, 0002... reset every financial year.
+ */
+public String getNextLrCopyNo(String entryDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+
+        String dateRef = (entryDate != null && entryDate.trim().length() == 10)
+            ? entryDate.trim()
+            : new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date());
+
+        ps = con.prepareStatement(
+            "SELECT LPAD(IFNULL(MAX(CAST(lr_no AS UNSIGNED)),0) + 1, 4, '0') "
+          + "FROM transport_lr_copy "
+          + "WHERE entry_date BETWEEN "
+          + "      CASE WHEN MONTH(?) >= 4 THEN CONCAT(YEAR(?),'-04-01') ELSE CONCAT(YEAR(?) - 1,'-04-01') END "
+          + "  AND CASE WHEN MONTH(?) >= 4 THEN CONCAT(YEAR(?) + 1,'-03-31') ELSE CONCAT(YEAR(?),'-03-31') END");
+        ps.setString(1, dateRef);
+        ps.setString(2, dateRef);
+        ps.setString(3, dateRef);
+        ps.setString(4, dateRef);
+        ps.setString(5, dateRef);
+        ps.setString(6, dateRef);
+
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getString(1);
+        }
+        return "0001";
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Saves LR copy row and returns generated id.
+ */
+public int saveLrCopy(int customerId, String customerName, String phoneNumber,
+                      String lrDate, String truckNo, String fromLocation, String toLocation,
+                      String consigneeName,
+                      String noOfArticles, String descriptionText, String weightMt,
+                      String modePayment1, String freightAmount, String toPayAmount, String paidAmount,
+                      String amountInWords,
+                      String dcNo, String invDate, String invNo, String invDate2,
+                      String declaredValueRs, String pnlSealNo, String materialReceivedDate,
+                      String pnlNo, String driverName, String vehicleType, String deliverIn,
+                      int entryUser) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    int newId = 0;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+
+        String nextLrNo = getNextLrCopyNo(lrDate);
+        String sql = "INSERT INTO transport_lr_copy ("
+                   + "lr_no, customer_id, customer_name, phone_number, lr_date, truck_no, from_location, to_location, "
+                   + "consignee_name, no_of_articles, description_text, weight_mt, "
+                   + "mode_payment1, freight_amount, to_pay_amount, paid_amount, amount_in_words, "
+                   + "dc_no, inv_date, inv_no, inv_date2, declared_value_rs, pnl_seal_no, material_received_date, "
+                   + "pnl_no, driver_name, vehicle_type, deliver_in, "
+                   + "entry_user, entry_date_time, entry_date, is_cancelled"
+                   + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,0)";
+
+        ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        ps.setString(1, nextLrNo);
+        ps.setInt(2, customerId);
+        ps.setString(3, customerName);
+        ps.setString(4, phoneNumber);
+        ps.setString(5, lrDate);
+        ps.setString(6, truckNo);
+        ps.setString(7, fromLocation);
+        ps.setString(8, toLocation);
+        ps.setString(9, consigneeName);
+        ps.setString(10, noOfArticles);
+        ps.setString(11, descriptionText);
+        ps.setString(12, weightMt);
+        ps.setString(13, modePayment1);
+        ps.setString(14, freightAmount);
+        ps.setString(15, toPayAmount);
+        ps.setString(16, paidAmount);
+        ps.setString(17, amountInWords);
+        ps.setString(18, dcNo);
+        ps.setString(19, invDate);
+        ps.setString(20, invNo);
+        ps.setString(21, invDate2);
+        ps.setString(22, declaredValueRs);
+        ps.setString(23, pnlSealNo);
+        ps.setString(24, materialReceivedDate);
+        ps.setString(25, pnlNo);
+        ps.setString(26, driverName);
+        ps.setString(27, vehicleType);
+        ps.setString(28, deliverIn);
+        ps.setInt(29, entryUser);
+        ps.setString(30, lrDate);
+        ps.executeUpdate();
+
+        rs = ps.getGeneratedKeys();
+        if (rs.next()) newId = rs.getInt(1);
+
+        con.commit();
+        return newId;
+    } catch (Exception e) {
+        if (con != null) { try { con.rollback(); } catch (Exception ex) { ; } }
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Returns LR copy row by lr_no.
+ */
+public Vector getLrCopyByLrNo(String lrNo) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector row = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT id, lr_no, IFNULL(customer_id,0), IFNULL(customer_name,''), IFNULL(phone_number,''), "
+          + "IFNULL(lr_date,''), IFNULL(truck_no,''), IFNULL(from_location,''), IFNULL(to_location,''), "
+          + "IFNULL(consignee_name,''), IFNULL(no_of_articles,''), IFNULL(description_text,''), IFNULL(weight_mt,''), "
+          + "IFNULL(mode_payment1,''), IFNULL(freight_amount,''), IFNULL(to_pay_amount,''), IFNULL(paid_amount,''), "
+          + "IFNULL(amount_in_words,''), IFNULL(dc_no,''), IFNULL(inv_date,''), IFNULL(inv_no,''), IFNULL(inv_date2,''), "
+          + "IFNULL(declared_value_rs,''), IFNULL(pnl_seal_no,''), IFNULL(material_received_date,''), IFNULL(pnl_no,''), "
+          + "IFNULL(driver_name,''), IFNULL(vehicle_type,''), IFNULL(deliver_in,''), "
+          + "entry_user, IFNULL(entry_date_time,''), is_cancelled, IFNULL(cancel_uid,0), IFNULL(cancel_date_time,'') "
+          + "FROM transport_lr_copy WHERE lr_no=? LIMIT 1");
+        ps.setString(1, lrNo);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            for (int i = 1; i <= 34; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+        }
+        return row;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Returns LR copy row by id.
+ */
+public Vector getLrCopyById(int id) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector row = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT id, lr_no, IFNULL(customer_id,0), IFNULL(customer_name,''), IFNULL(phone_number,''), "
+          + "IFNULL(lr_date,''), IFNULL(truck_no,''), IFNULL(from_location,''), IFNULL(to_location,''), "
+          + "IFNULL(consignee_name,''), IFNULL(no_of_articles,''), IFNULL(description_text,''), IFNULL(weight_mt,''), "
+          + "IFNULL(mode_payment1,''), IFNULL(freight_amount,''), IFNULL(to_pay_amount,''), IFNULL(paid_amount,''), "
+          + "IFNULL(amount_in_words,''), IFNULL(dc_no,''), IFNULL(inv_date,''), IFNULL(inv_no,''), IFNULL(inv_date2,''), "
+          + "IFNULL(declared_value_rs,''), IFNULL(pnl_seal_no,''), IFNULL(material_received_date,''), IFNULL(pnl_no,''), "
+          + "IFNULL(driver_name,''), IFNULL(vehicle_type,''), IFNULL(deliver_in,''), "
+          + "entry_user, IFNULL(entry_date_time,''), is_cancelled, IFNULL(cancel_uid,0), IFNULL(cancel_date_time,'') "
+          + "FROM transport_lr_copy WHERE id=? LIMIT 1");
+        ps.setInt(1, id);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            for (int i = 1; i <= 34; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+        }
+        return row;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Updates LR copy row by id if not cancelled.
+ */
+public int updateLrCopy(int id, int customerId, String customerName, String phoneNumber,
+                        String lrDate, String truckNo, String fromLocation, String toLocation,
+                        String consigneeName,
+                        String noOfArticles, String descriptionText, String weightMt,
+                        String modePayment1, String freightAmount, String toPayAmount, String paidAmount,
+                        String amountInWords,
+                        String dcNo, String invDate, String invNo, String invDate2,
+                        String declaredValueRs, String pnlSealNo, String materialReceivedDate,
+                        String pnlNo, String driverName, String vehicleType, String deliverIn) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "UPDATE transport_lr_copy SET customer_id=?, customer_name=?, phone_number=?, lr_date=?, truck_no=?, "
+          + "from_location=?, to_location=?, consignee_name=?, no_of_articles=?, description_text=?, weight_mt=?, "
+          + "mode_payment1=?, freight_amount=?, to_pay_amount=?, paid_amount=?, amount_in_words=?, "
+          + "dc_no=?, inv_date=?, inv_no=?, inv_date2=?, declared_value_rs=?, pnl_seal_no=?, material_received_date=?, "
+          + "pnl_no=?, driver_name=?, vehicle_type=?, deliver_in=?, entry_date=? "
+          + "WHERE id=? AND is_cancelled=0");
+        ps.setInt(1, customerId);
+        ps.setString(2, customerName);
+        ps.setString(3, phoneNumber);
+        ps.setString(4, lrDate);
+        ps.setString(5, truckNo);
+        ps.setString(6, fromLocation);
+        ps.setString(7, toLocation);
+        ps.setString(8, consigneeName);
+        ps.setString(9, noOfArticles);
+        ps.setString(10, descriptionText);
+        ps.setString(11, weightMt);
+        ps.setString(12, modePayment1);
+        ps.setString(13, freightAmount);
+        ps.setString(14, toPayAmount);
+        ps.setString(15, paidAmount);
+        ps.setString(16, amountInWords);
+        ps.setString(17, dcNo);
+        ps.setString(18, invDate);
+        ps.setString(19, invNo);
+        ps.setString(20, invDate2);
+        ps.setString(21, declaredValueRs);
+        ps.setString(22, pnlSealNo);
+        ps.setString(23, materialReceivedDate);
+        ps.setString(24, pnlNo);
+        ps.setString(25, driverName);
+        ps.setString(26, vehicleType);
+        ps.setString(27, deliverIn);
+        ps.setString(28, lrDate);
+        ps.setInt(29, id);
+        return ps.executeUpdate();
+    } finally {
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Cancels LR copy row and records cancel info.
+ */
+public int cancelLrCopy(int id, int cancelUid) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "UPDATE transport_lr_copy SET is_cancelled=1, cancel_uid=?, cancel_date_time=NOW() "
+          + "WHERE id=? AND is_cancelled=0");
+        ps.setInt(1, cancelUid);
+        ps.setInt(2, id);
+        return ps.executeUpdate();
+    } finally {
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Returns LR copy rows for date range.
+ * Each row: [id, lr_no, lr_date, customer_name, phone_number, from_location, to_location,
+ *            truck_no, consignee_name, no_of_articles, weight_mt, is_cancelled]
+ */
+public Vector getLrCopyReport(String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT id, lr_no, IFNULL(DATE_FORMAT(lr_date,'%Y-%m-%d'),''), "
+          + "IFNULL(customer_name,''), IFNULL(phone_number,''), IFNULL(from_location,''), IFNULL(to_location,''), "
+          + "IFNULL(truck_no,''), IFNULL(consignee_name,''), IFNULL(no_of_articles,''), IFNULL(weight_mt,''), is_cancelled "
+            + "FROM transport_lr_copy "
+            + "WHERE lr_date BETWEEN ? AND ? "
+          + "ORDER BY lr_date ASC, id ASC");
+        ps.setString(1, fromDate);
+        ps.setString(2, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            for (int i = 1; i <= 12; i++) row.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Returns company print details: [shop_name, address, gstin, bank_details]
+ */
+public Vector getCompanyDetailsForPrint() throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector co = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT IFNULL(shop_name,''), IFNULL(address,''), IFNULL(gstin,''), IFNULL(bank_details,'') "
+          + "FROM company_details LIMIT 1");
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            for (int i = 1; i <= 4; i++) co.addElement(rs.getString(i) != null ? rs.getString(i) : "");
+        }
+        return co;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Returns customer address by customer id.
+ */
+public String getCustomerAddressById(int customerId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement("SELECT IFNULL(address,'') FROM customers WHERE id=? LIMIT 1");
+        ps.setInt(1, customerId);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getString(1) != null ? rs.getString(1) : "";
+        }
+        return "";
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Returns customer address by exact customer name.
+ */
+public String getCustomerAddressByName(String customerName) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement("SELECT IFNULL(address,'') FROM customers WHERE name=? LIMIT 1");
+        ps.setString(1, customerName != null ? customerName.trim() : "");
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getString(1) != null ? rs.getString(1) : "";
+        }
+        return "";
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
  * Saves a logistics order to the logistics table.
  *
  * @param supplierId   prod_supplier.id
