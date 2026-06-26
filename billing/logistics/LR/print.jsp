@@ -43,6 +43,7 @@ if ("consignor".equalsIgnoreCase(copyType)) {
 } else if ("driver".equalsIgnoreCase(copyType)) {
     copyTitle = "Driver Copy ";
 }
+String copyTitleHeading = copyTitle.trim().toUpperCase();
 int customerId = 0;
 try { customerId = Integer.parseInt(lr.get(2).toString()); } catch (Exception ignore) {}
 String customerAddress = "";
@@ -68,6 +69,17 @@ String amountInWords = lr.get(17).toString();
 String dcNo = lr.get(18).toString();
 String invDate = lr.get(19).toString();
 String invNo = lr.get(20).toString();
+String invNoDisplay = "";
+if (invNo != null) {
+    String invNoFlat = invNo.replace("\r", "").replace("\n", "");
+    StringBuilder invNoBuf = new StringBuilder();
+    for (int i = 0; i < invNoFlat.length(); i += 20) {
+        int end = Math.min(i + 20, invNoFlat.length());
+        if (i > 0) invNoBuf.append("<br>");
+        invNoBuf.append(invNoFlat.substring(i, end));
+    }
+    invNoDisplay = invNoBuf.toString();
+}
 String invDate2 = lr.get(21).toString();
 String declaredValueRs = lr.get(22).toString();
 String pnlSealNo = lr.get(23).toString();
@@ -76,6 +88,12 @@ String pnlNo = lr.get(25).toString();
 String driverName = lr.get(26).toString();
 String vehicleType = lr.get(27).toString();
 String deliverIn = lr.get(28).toString();
+String deliverInNorm = (deliverIn == null ? "" : deliverIn.trim().toLowerCase());
+boolean isDoorDelivery = "door delivery".equals(deliverInNorm);
+boolean isUnloadedByParty = "unloaded by party".equals(deliverInNorm);
+boolean isByTransporter = "by transporter".equals(deliverInNorm);
+String companyName = co.get(0).toString();
+companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').replace('\r', ' ').trim();
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,75 +101,137 @@ String deliverIn = lr.get(28).toString();
 <meta charset="UTF-8">
 <title>LR Copy - <%=lrNo%></title>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&display=swap');
     * { box-sizing: border-box; }
-    body { margin:0; font-family: Arial, Helvetica, sans-serif; color:#111; font-size:12px; }
+    body { margin:0; font-family: Arial, Helvetica, sans-serif; color:#0b2f63; font-size:12px; background:#fff; }
     .page {
         width: 210mm;
         min-height: 297mm;
         height: 297mm;
         margin: 0 auto;
-        padding: 10mm 12mm;
+        padding: 7mm 8mm;
         display: flex;
         flex-direction: column;
+        border: 1px solid #5a5a5a;
+        background: #fff;
     }
 
     .print-header {
-        font-family: 'Poppins', Arial, Helvetica, sans-serif;
-        background: linear-gradient(135deg, #030d24 0%, #0a1d47 55%, #143272 100%);
-        padding: 9px 14px 11px;
-        margin-bottom: 4px;
-        border-top: 2px solid rgba(255,255,255,.8);
+        padding: 4px 6px 6px;
+        margin-bottom: 0;
+        border: 1px solid #666;
         position: relative;
-        overflow: hidden;
     }
-    .print-header::after {
-        content: '';
-        position: absolute;
-        top: -14px;
-        bottom: -14px;
-        left: calc(20% + 10px);
-        width: 4px;
-        background: linear-gradient(to bottom, #2e7d32 0%, #66bb6a 50%, #2e7d32 100%);
-        transform: rotate(-18deg);
-        z-index: 3;
+    .header-corner-decor { display:none; }
+
+    .header-topline {
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        padding: 1px 2px 3px;
+        margin-bottom: 5px;
     }
-    .header-corner-decor { position:absolute; top:0; right:0; height:100%; width:150px; z-index:1; }
-    .header-corner-decor .ct1 { position:absolute; top:0; right:0; height:100%; width:150px; background:#1a5e1a; clip-path: polygon(100% 0%, 100% 100%, 50% 100%); }
-    .header-corner-decor .ct2 { position:absolute; top:0; right:12px; height:100%; width:115px; background:#2e7d32; clip-path: polygon(100% 0%, 100% 100%, 65% 100%); }
+    .header-meta-left, .header-meta-right {
+        width: 26%;
+        font-size:11px;
+        font-weight:700;
+        color:#0b2f63;
+        white-space:nowrap;
+    }
+    .header-meta-right { text-align:right; }
+    .header-cell {
+        display:inline-block;
+        text-align:right;
+        line-height:1.15;
+        white-space:normal;
+        color:#0b2f63;
+    }
+    .header-cell .cell-label { color:#0b2f63; }
+    .header-devotion-center {
+        width: 48%;
+        display:flex;
+        justify-content:center;
+    }
 
     .header-main { display:flex; position:relative; z-index:2; }
-    .logo-wrap { width:20%; display:flex; align-items:center; justify-content:center; padding-right:12px; }
-    .logo-wrap img { width:100%; max-width:146px; filter: brightness(0) invert(1); }
-    .logo-wrap .no-logo { width:100%; max-width:146px; aspect-ratio:1.7; display:flex; align-items:center; justify-content:center; color:#fff; border:1px solid rgba(255,255,255,.4); }
-    .header-content { width:80%; display:flex; align-items:center; padding-left:20px; }
-    .co-block { width:100%; text-align:center; color:#fff; }
-    .co-name { font-size:28px; font-weight:800; letter-spacing:2px; text-transform:uppercase; line-height:1.05; }
-    .co-sub { font-size:13px; margin-top:2px; white-space:pre-wrap; }
-    .co-devotion { display:flex; justify-content:center; align-items:center; gap:6px; font-size:11px; margin-bottom:2px; white-space:nowrap; }
-    .dev-soolam-wrap { width:24px; height:42px; display:inline-flex; align-items:flex-start; justify-content:center; overflow:hidden; margin-right:4px; }
-    .dev-soolam { width:34px; height:34px; object-fit:cover; object-position:center 8%; transform:scale(1.9); transform-origin:center top; }
-    .header-divider { height:3px; background: linear-gradient(90deg, #f5a623 0%, #f0c040 50%, #f5a623 100%); margin-bottom: 8px; }
+    .logo-wrap { width:20%; display:flex; align-items:center; justify-content:center; padding-right:8px; }
+    .logo-wrap img {
+        width:100%;
+        max-width:128px;
+        filter: brightness(0) saturate(100%) invert(16%) sepia(73%) saturate(1918%) hue-rotate(341deg) brightness(92%) contrast(94%);
+    }
+    .logo-wrap .no-logo { width:100%; max-width:128px; aspect-ratio:1.7; display:flex; align-items:center; justify-content:center; color:#222; border:1px solid #999; }
+    .header-content { width:80%; display:flex; align-items:center; padding-left:8px; }
+    .co-block { width:100%; text-align:center; color:#0b2f63; }
+    .co-name {
+        font-size:34px;
+        font-weight:800;
+        letter-spacing:1px;
+        text-transform:uppercase;
+        line-height:1.02;
+        color:#8d1f1f;
+        white-space:nowrap;
+    }
+    .co-sub { font-size:12px; margin-top:3px; white-space:pre-wrap; line-height:1.2; color:#0b2f63; }
+    .co-devotion { display:inline-flex; align-items:flex-start; gap:6px; font-size:11px; white-space:nowrap; }
+    .dev-soolam-wrap {
+        width:24px;
+        height:42px;
+        display:inline-flex;
+        align-items:flex-start;
+        justify-content:center;
+        overflow:hidden;
+        margin-right:4px;
+        flex-shrink:0;
+    }
+    .dev-soolam {
+        width:34px;
+        height:34px;
+        display:inline-block;
+        vertical-align:middle;
+        object-fit:cover;
+        object-position:center 0%;
+        transform:translateY(-2px) scale(1.9);
+        transform-origin:center top;
+    }
+    .dev-left { display:inline-flex; flex-direction:column; align-items:flex-start; gap:1px; }
+    .dev-top { display:inline-flex; align-items:center; gap:3px; }
+    .dev-main { font-weight:800; letter-spacing:0.2px; color:#0b2f63; }
+    .dev-win { font-weight:800; letter-spacing:0.2px; font-size:10px; margin-left:26px; color:#0b2f63; }
+    .header-divider { display:none; height:0; margin:0; border:0; }
 
-    .title-bar { border:1px solid #b8c8f0; background:#f0f4ff; text-align:center; font-weight:900; color:#0a1f44; padding:7px; margin-bottom:10px; font-size:19px; }
+    .title-bar {
+        border:1px solid #666;
+        text-align:center;
+        font-weight:700;
+        color:#0b2f63;
+        padding:4px;
+        margin-bottom:0;
+        font-size:12px;
+        text-transform:uppercase;
+        letter-spacing:0.5px;
+    }
+    .copy-part { color:#8d1f1f; }
+    .risk-part { color:#0b2f63; }
+    .header-divider + .title-bar { margin-top:-1px; }
 
-    .box { border:1px solid #000; margin-bottom:6px; }
-    .top-box { display:flex; border:1px solid #000; margin-bottom:6px; }
+    .box { border:1px solid #000; margin-bottom:0; }
+    .top-box { display:flex; border:1px solid #000; margin-bottom:0; }
+    .top-box + .box { border-top:0; }
     .top-left { width:58%; border-right:1px solid #000; }
     .top-right { width:42%; }
-    .top-cell { border-bottom:1px solid #000; padding:6px 8px; }
+    .top-cell { border-bottom:1px solid #000; padding:7px 9px; }
     .top-left .top-cell:last-child, .top-right .top-cell:last-child { border-bottom:none; }
     .top-right-row { display:flex; border-bottom:1px solid #000; }
     .top-right-row:last-child { border-bottom:none; }
-    .top-right-row .lbl-cell { width:42%; border-right:1px solid #000; padding:8px 9px; font-size:11px; text-transform:uppercase; color:#555; font-weight:700; }
-    .top-right-row .val-cell { width:58%; padding:8px 9px; font-size:14px; font-weight:700; }
+    .top-right-row .lbl-cell { width:42%; border-right:1px solid #000; padding:8px 10px; font-size:12px; text-transform:uppercase; color:#0b2f63; font-weight:700; line-height:1.25; }
+    .top-right-row .val-cell { width:58%; padding:8px 10px; font-size:15px; font-weight:700; line-height:1.25; color:#0b2f63; }
     .row { display:flex; }
-    .cell { border-right:1px solid #000; border-bottom:1px solid #000; padding:6px 8px; font-size:12px; }
+    .cell { border-right:1px solid #000; border-bottom:1px solid #000; padding:7px 9px; font-size:13px; }
     .cell:last-child { border-right:none; }
     .row:last-child .cell { border-bottom:none; }
     .lbl {
-        font-size:11px;
-        color:#555;
+        font-size:12px;
+        color:#0b2f63;
         text-transform:uppercase;
         font-weight:700;
         display:block;
@@ -160,37 +240,137 @@ String deliverIn = lr.get(28).toString();
     }
     .val {
         font-size:14px;
-        font-weight:700;
+        font-weight:600;
         min-height:20px;
         white-space:pre-wrap;
-        line-height:1.25;
-        margin-top:1px;
+        line-height:1.35;
+    }
+    .inline-pair {
+        display:flex;
+        align-items:baseline;
+        gap:8px;
+        margin-bottom:6px;
+        flex-wrap:nowrap;
+    }
+    .inline-pair:last-child { margin-bottom:0; }
+    .inline-pair .lbl {
+        display:inline;
+        margin:0;
+        white-space:nowrap;
+        flex:0 0 auto;
+    }
+    .inline-pair .val {
+        display:inline-block;
+        min-height:0;
+        white-space:normal;
+        line-height:1.3;
+        flex:1 1 auto;
+        min-width:0;
+        word-break:break-word;
     }
 
     .w40 { width:40%; } .w60 { width:60%; } .w25 { width:25%; } .w20 { width:20%; } .w15 { width:15%; } .w35 { width:35%; } .w50 { width:50%; }
 
-    table.lr-table { width:100%; border-collapse:collapse; margin-top:4px; }
-    .lr-table th, .lr-table td { border:1px solid #000; padding:6px 8px; font-size:12px; vertical-align:top; }
-    .lr-table th { background:#f4f4f4; text-transform:uppercase; font-size:11px; }
+    table.lr-table { width:100%; border-collapse:collapse; margin-top:0; }
+    .lr-table th, .lr-table td { border:1px solid #000; padding:7px 9px; font-size:13px; vertical-align:top; color:#0b2f63; }
+    .lr-table th { background:#ececec; text-transform:none; font-size:12px; font-weight:700; text-align:center; }
+    .lr-table td:nth-child(1), .lr-table td:nth-child(2) { text-align:center; }
 
     .mode-grid { display:grid; grid-template-columns: 1fr; gap:2px; }
-    .mode-item { border:1px solid #777; padding:5px 7px; font-size:11px; }
+    .mode-item { border:1px solid #777; padding:5px 7px; font-size:12px; color:#0b2f63; }
 
-    .footer-sign { margin-top:10px; border:1px solid #000; padding:12px; min-height:78px; }
+    .detail-grid {
+        width:100%;
+        border-collapse:collapse;
+        table-layout:fixed;
+    }
+    .detail-grid td {
+        border:1px solid #000;
+        padding:7px 9px;
+        vertical-align:top;
+    }
+    .detail-lbl {
+        font-size:12px;
+        color:#0b2f63;
+        text-transform:uppercase;
+        font-weight:700;
+        display:block;
+        margin-bottom:4px;
+        line-height:1.1;
+    }
+    .detail-val {
+        font-size:14px;
+        font-weight:600;
+        min-height:20px;
+        white-space:pre-wrap;
+        line-height:1.35;
+        color:#0b2f63;
+    }
+    .inv-wrap {
+        white-space:normal;
+        overflow-wrap:anywhere;
+        word-break:break-word;
+    }
+    .deliver-in-grid {
+        margin-top:6px;
+        display:flex;
+        gap:0;
+        border:1px solid #000;
+    }
+    .deliver-opt {
+        flex:1;
+        border-right:1px solid #000;
+        padding:4px 6px;
+        font-size:12px;
+        font-weight:700;
+        text-transform:uppercase;
+        text-align:center;
+        line-height:1.2;
+        color:#0b2f63;
+    }
+    .deliver-opt:last-child { border-right:none; }
+    .tick-mark {
+        display:inline-block;
+        width:12px;
+        margin-right:4px;
+        color:#0b2f63;
+        font-weight:800;
+    }
+
+    .footer-sign { margin-top:0; border:1px solid #000; border-top:0; padding:10px; min-height:116px; }
+    .footer-grid { display:flex; gap:10px; height:100%; }
+    .recv-box { width:60%; border-right:1px solid #000; padding-right:10px; }
+    .recv-title { color:#8d1f1f; font-weight:700; text-transform:uppercase; font-size:12px; margin-bottom:8px; }
+    .recv-oval {
+        height:62px;
+        width:94%;
+        margin:0 auto;
+        border:2.5px solid #a63a2f;
+        border-radius:50%;
+    }
+    .clerk-box { width:40%; display:flex; flex-direction:column; justify-content:flex-end; }
+    .sign-line { border-top:1px solid #000; text-align:center; font-size:11px; font-weight:700; padding-top:4px; }
+
     .print-note { text-align:center; font-size:11px; color:#666; margin-top:6px; }
     .powered-by {
         text-align: right;
         font-size: 10px;
-        color: #7e8896;
+        color: #777;
         font-weight: 600;
         margin-top: 2px;
         padding-right: 2px;
         letter-spacing: 0.2px;
         opacity: 0.8;
-        filter: blur(0.35px);
-        -webkit-filter: blur(0.35px);
     }
-    .print-spacer { flex: 1; min-height: 10mm; }
+    .print-spacer { display:none; }
+
+    /* Join adjacent section borders as one continuous form */
+    .title-bar + .top-box,
+    .box + table.lr-table,
+    table.lr-table + .box,
+    table.lr-table + .footer-sign {
+        margin-top: -1px;
+    }
 
     .no-print { background:#343a40; color:#fff; padding:10px 16px; display:flex; gap:10px; align-items:center; }
     .no-print button { border:none; border-radius:6px; padding:7px 14px; font-size:13px; cursor:pointer; }
@@ -224,6 +404,33 @@ String deliverIn = lr.get(28).toString();
 
 <div class="page">
     <div class="print-header">
+        <div class="header-topline">
+            <div class="header-meta-left">
+                <% if (!co.get(2).toString().isEmpty()) { %>
+                GSTIN : <%=co.get(2)%>
+                <% } %>
+            </div>
+            <div class="header-devotion-center">
+                <div class="co-devotion">
+                    <span class="dev-soolam-wrap">
+                        <img class="dev-soolam" src="<%=contextPath%>/logistics/transportBill/soolam2.png" alt="Soolam" onerror="this.onerror=null;this.src='<%=contextPath%>/logistics/transportBill/soolam1.png';">
+                    </span>
+                    <span class="dev-left">
+                        <span class="dev-top">
+                            <span>&#x5350;</span><span class="dev-main">GOD'S GRACE</span><span>&#x5350;</span>
+                        </span>
+                        <span class="dev-win">WIN WIN</span>
+                    </span>
+                </div>
+            </div>
+            <div class="header-meta-right">
+                <span class="header-cell">
+                    <span class="cell-label">Cell :</span> 99941 82275<br>
+                    98844 83426
+                </span>
+            </div>
+        </div>
+
         <div class="header-main">
             <div class="logo-wrap">
                 <%
@@ -237,16 +444,7 @@ String deliverIn = lr.get(28).toString();
             </div>
             <div class="header-content">
                 <div class="co-block">
-                    <div class="co-devotion">
-                        <span class="dev-soolam-wrap">
-                            <img class="dev-soolam" src="<%=contextPath%>/logistics/transportBill/soolam2.png" alt="Soolam" onerror="this.onerror=null;this.src='<%=contextPath%>/logistics/transportBill/soolam1.png';">
-                        </span>
-                        <span>&#x5350;</span><span>GOD'S GRACE</span><span>&#x5350;</span>
-                        <% if (!co.get(2).toString().isEmpty()) { %>
-                        <span style="margin-left:14px;font-weight:700;">GSTIN: <%=co.get(2)%></span>
-                        <% } %>
-                    </div>
-                    <div class="co-name"><%=co.get(0)%></div>
+                    <div class="co-name"><%=companyName%></div>
                     <div class="co-sub"><%=co.get(1)%></div>
                 </div>
             </div>
@@ -255,17 +453,19 @@ String deliverIn = lr.get(28).toString();
     </div>
     <div class="header-divider"></div>
 
-    <div class="title-bar"><%=copyTitle%></div>
+    <div class="title-bar"><span class="copy-part"><%=copyTitleHeading%></span><span class="risk-part"> | BOOKED AT OWNER'S RISK</span></div>
 
     <div class="top-box">
         <div class="top-left">
             <div class="top-cell">
-                <div class="lbl">Consignor Name</div>
-                <div class="val"><%=customerName%></div>
-            </div>
-            <div class="top-cell">
-                <div class="lbl">Address / Phone</div>
-                <div class="val"><%=customerAddress%><% if (phone != null && !phone.trim().isEmpty()) { %><br><%=phone%><% } %></div>
+                <div class="inline-pair">
+                    <span class="lbl">Consignor Name</span>
+                    <span class="val"><%=customerName%></span>
+                </div>
+                <div class="inline-pair">
+                    <span class="lbl">Address / Phone</span>
+                    <span class="val"><%= (customerAddress == null ? "" : customerAddress.replace("\r", " ").replace("\n", " ")) %><% if (phone != null && !phone.trim().isEmpty()) { %> / <%=phone%><% } %></span>
+                </div>
             </div>
         </div>
         <div class="top-right">
@@ -294,10 +494,16 @@ String deliverIn = lr.get(28).toString();
 
     <div class="box">
         <div class="row">
-            <div class="cell w100" style="width:100%;"><div class="lbl">Consignee Name</div><div class="val"><%=consigneeName%></div></div>
-        </div>
-        <div class="row">
-            <div class="cell w100" style="width:100%;"><div class="lbl">Consignee Address</div><div class="val"><%=consigneeAddress%></div></div>
+            <div class="cell w100" style="width:100%;">
+                <div class="inline-pair">
+                    <span class="lbl">Consignee Name</span>
+                    <span class="val"><%=consigneeName%></span>
+                </div>
+                <div class="inline-pair">
+                    <span class="lbl">Consignee Address</span>
+                    <span class="val"><%= (consigneeAddress == null ? "" : consigneeAddress.replace("\r", " ").replace("\n", " ")) %></span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -305,16 +511,14 @@ String deliverIn = lr.get(28).toString();
         <thead>
             <tr>
                 <th style="width:12%;">No of Articles</th>
-                <th style="width:38%;">Description (Said to contain)</th>
-                <th style="width:12%;">Weight (M.T)</th>
-                <th style="width:38%;">Mode of Payment</th>
+                <th style="width:46%;">Description (Said to contain)</th>
+                <th style="width:42%;">Mode of Payment</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td><%=noOfArticles%></td>
                 <td><%=descriptionText%></td>
-                <td><%=weightMt%></td>
                 <td>
                     <div class="mode-grid">
                         <div class="mode-item"> <%=modePayment1%></div>
@@ -327,35 +531,55 @@ String deliverIn = lr.get(28).toString();
         </tbody>
     </table>
 
-    <div class="box" style="margin-top:6px;">
-        <div class="row">
-            <div class="cell w25"><div class="lbl">DC No</div><div class="val"><%=dcNo%></div></div>
-            <div class="cell w25"><div class="lbl">Inv Date</div><div class="val"><%=invDate%></div></div>
-            <div class="cell w25"><div class="lbl">Inv No</div><div class="val"><%=invNo%></div></div>
-            <div class="cell w25"><div class="lbl">Inv Date 2</div><div class="val"><%=invDate2%></div></div>
-        </div>
-        <div class="row">
-            <div class="cell w25"><div class="lbl">Declared Value Rs</div><div class="val"><%=declaredValueRs%></div></div>
-            <div class="cell w25"><div class="lbl">PNL Seal No</div><div class="val"><%=pnlSealNo%></div></div>
-            <div class="cell w25"><div class="lbl">Material Received Date</div><div class="val"><%=materialReceivedDate%></div></div>
-            <div class="cell w25"><div class="lbl">PNL No</div><div class="val"><%=pnlNo%></div></div>
-        </div>
-        <div class="row">
-            <div class="cell w35"><div class="lbl">Driver Name</div><div class="val"><%=driverName%></div></div>
-            <div class="cell w35"><div class="lbl">Type of Vehicle</div><div class="val"><%=vehicleType%></div></div>
-            <div class="cell w30" style="width:30%;"><div class="lbl">Deliver In</div><div class="val"><%=deliverIn%></div></div>
-        </div>
-        <div class="row">
-            <div class="cell" style="width:100%;"><div class="lbl">In Words</div><div class="val"><%=amountInWords%></div></div>
-        </div>
+    <div class="box">
+        <table class="detail-grid">
+            <tr>
+                <td style="width:30%;"><span class="detail-lbl">In Words</span><div class="detail-val"><%=amountInWords%></div></td>
+                <td style="width:30%;"><span class="detail-lbl">D.C No</span><div class="detail-val"><%=dcNo%></div></td>
+                <td style="width:20%;"><span class="detail-lbl">Date</span><div class="detail-val"><%=invDate%></div></td>
+                <td style="width:20%;"><span class="detail-lbl">Weight (M.T)</span><div class="detail-val"><%=weightMt%></div></td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="detail-lbl">Declared Value Rs</span><div class="detail-val"><%=declaredValueRs%></div></td>
+                <td colspan="2"><span class="detail-lbl">PNL Seal No</span><div class="detail-val"><%=pnlSealNo%></div></td>
+            </tr>
+            <tr>
+                <td colspan="2" rowspan="2"><span class="detail-lbl">Inv No</span><div class="detail-val inv-wrap"><%=invNoDisplay%></div></td>
+                <td colspan="2"><span class="detail-lbl">Material Received Date</span><div class="detail-val"><%=materialReceivedDate%></div></td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="detail-lbl">D.L No</span><div class="detail-val"><%=pnlNo%></div></td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="detail-lbl">Driver Name</span><div class="detail-val"><%=driverName%></div></td>
+                <td colspan="2">
+                    <span class="detail-lbl">Type of Vehicle</span>
+                    <div class="detail-val"><%=vehicleType%></div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4" style="padding:0;">
+                    <div class="deliver-in-grid" style="margin-top:0; border:0;">
+                        <div class="deliver-opt"><span class="tick-mark"><%= isDoorDelivery ? "&#10003;" : "" %></span>Door Delivery</div>
+                        <div class="deliver-opt"><span class="tick-mark"><%= isUnloadedByParty ? "&#10003;" : "" %></span>Unloading by Party</div>
+                        <div class="deliver-opt"><span class="tick-mark"><%= isByTransporter ? "&#10003;" : "" %></span>By Transporter</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
     <div class="print-spacer"></div>
 
     <div class="footer-sign">
-        <div style="display:flex; justify-content:space-between; margin-top:36px;">
-            <div style="width:45%; text-align:center; border-top:1px solid #000; padding-top:4px; font-size:12px; font-weight:700;">Receiver Sign, Seal and Unloading Date</div>
-            <div style="width:45%; text-align:center; border-top:1px solid #000; padding-top:4px; font-size:12px; font-weight:700;">Signature of Booking Clerk and Date</div>
+        <div class="footer-grid">
+            <div class="recv-box">
+                <div class="recv-title">Receiver's Sign. Seal and Unloading Date :</div>
+                <div class="recv-oval"></div>
+            </div>
+            <div class="clerk-box">
+                <div class="sign-line">Signature of Booking Clerk and Date</div>
+            </div>
         </div>
     </div>
 

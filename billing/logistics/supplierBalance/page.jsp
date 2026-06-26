@@ -69,6 +69,14 @@ String type = request.getParameter("type");
                     <input type="text" id="fltSupplier" class="form-control fg-inp" placeholder="Search supplier..." style="min-width:180px;">
                 </div>
                 <div class="col-auto">
+                    <label for="fltFromDate" class="form-label small mb-1">From LR Date</label>
+                    <input type="date" id="fltFromDate" class="form-control fg-inp" style="min-width:170px;">
+                </div>
+                <div class="col-auto">
+                    <label for="fltToDate" class="form-label small mb-1">To LR Date</label>
+                    <input type="date" id="fltToDate" class="form-control fg-inp" style="min-width:170px;">
+                </div>
+                <div class="col-auto">
                     <button type="button" class="bb bb-secondary" onclick="clearFilters()">
                         <i class="fa-solid fa-xmark me-1"></i>Clear
                     </button>
@@ -125,7 +133,7 @@ if (pendingList.isEmpty()) {
             lrDateDisplay = outFmt2.format(inFmt2.parse(lrDate));
         } catch (Exception _e) {}
 %>
-                    <tr data-lrno="<%=lrNo.toLowerCase()%>" data-supplier="<%=supName.toLowerCase()%>">
+                    <tr data-lrno="<%=lrNo.toLowerCase()%>" data-supplier="<%=supName.toLowerCase()%>" data-lrdate="<%=lrDate%>">
                         <td><%=i+1%></td>
                         <td><strong><%=lrNo%></strong></td>
                         <td><%=lrDateDisplay%></td>
@@ -245,20 +253,28 @@ $(function() {
     });
     <% } %>
     $('#fltLrNo, #fltSupplier').on('input', applyFilters);
+    $('#fltFromDate, #fltToDate').on('change', applyFilters);
 });
 
 function applyFilters() {
     var lr   = $('#fltLrNo').val().trim().toLowerCase();
     var sup  = $('#fltSupplier').val().trim().toLowerCase();
+    var fromDate = $('#fltFromDate').val();
+    var toDate = $('#fltToDate').val();
     $('#pendingTable tbody tr').each(function() {
         var r = $(this);
+        var rowDate = (r.data('lrdate') || '').toString();
+        var dateMatch = true;
+        if (fromDate) dateMatch = dateMatch && !!rowDate && rowDate >= fromDate;
+        if (toDate) dateMatch = dateMatch && !!rowDate && rowDate <= toDate;
         var match = (!lr  || (r.data('lrno')     || '').includes(lr))
-                 && (!sup || (r.data('supplier')  || '').includes(sup));
+                 && (!sup || (r.data('supplier')  || '').includes(sup))
+                 && dateMatch;
         r.toggle(match);
     });
 }
 function clearFilters() {
-    $('#fltLrNo, #fltSupplier').val('');
+    $('#fltLrNo, #fltSupplier, #fltFromDate, #fltToDate').val('');
     applyFilters();
 }
 

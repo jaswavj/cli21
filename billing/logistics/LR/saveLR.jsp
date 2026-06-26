@@ -63,7 +63,7 @@
             if (updated > 0) {
                 out.print("{\"status\":\"OK\",\"message\":\"LR updated\"}");
             } else {
-                out.print("{\"status\":\"ERROR\",\"message\":\"Unable to update LR\"}");
+                out.print("{\"status\":\"ERROR\",\"message\":\"Unable to update LR. Changes rolled back.\"}");
             }
         } else {
             int newId = bill.saveLrCopy(

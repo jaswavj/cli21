@@ -105,15 +105,15 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
                             <input type="text" class="form-control fg-inp" id="modePayment1" name="modePayment1" placeholder="Any text">
                         </div>
                         <div class="col-md-4">
-                            <label class="field-title">Freight Amount Rs</label>
+                            <label class="field-title">FREIGHT AMOUNT Rs</label>
                             <input type="text" class="form-control fg-inp" id="freightAmount" name="freightAmount">
                         </div>
                         <div class="col-md-4">
-                            <label class="field-title">To Pay Amount Rs</label>
+                            <label class="field-title">TO PAY AMOUNT Rs</label>
                             <input type="text" class="form-control fg-inp" id="toPayAmount" name="toPayAmount">
                         </div>
                         <div class="col-md-4">
-                            <label class="field-title">Paid Amount Rs</label>
+                            <label class="field-title">PAID AMOUNT Rs</label>
                             <input type="text" class="form-control fg-inp" id="paidAmount" name="paidAmount">
                         </div>
                     </div>
@@ -130,7 +130,7 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
                     <div class="col-md-3"><label class="field-title">PNL Seal No</label><input type="text" class="form-control fg-inp" id="pnlSealNo" name="pnlSealNo"></div>
 
                     <div class="col-md-3"><label class="field-title">Material Received Date</label><input type="date" class="form-control fg-inp" id="materialReceivedDate" name="materialReceivedDate"></div>
-                    <div class="col-md-3"><label class="field-title">PNL No</label><input type="text" class="form-control fg-inp" id="pnlNo" name="pnlNo"></div>
+                    <div class="col-md-3"><label class="field-title">D.L No</label><input type="text" class="form-control fg-inp" id="pnlNo" name="pnlNo"></div>
                     <div class="col-md-3"><label class="field-title">Driver Name</label><input type="text" class="form-control fg-inp" id="driverName" name="driverName"></div>
                     <div class="col-md-3"><label class="field-title">Type of Vehicle</label><input type="text" class="form-control fg-inp" id="vehicleType" name="vehicleType"></div>
 

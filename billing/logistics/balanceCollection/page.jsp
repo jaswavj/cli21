@@ -69,6 +69,14 @@ String type = request.getParameter("type");
                     <input type="text" id="fltCustomer" class="form-control fg-inp" placeholder="Search customer..." style="min-width:180px;">
                 </div>
                 <div class="col-auto">
+                    <label for="fltFromDate" class="form-label small mb-1">From Bill Date</label>
+                    <input type="date" id="fltFromDate" class="form-control fg-inp" style="min-width:170px;">
+                </div>
+                <div class="col-auto">
+                    <label for="fltToDate" class="form-label small mb-1">To Bill Date</label>
+                    <input type="date" id="fltToDate" class="form-control fg-inp" style="min-width:170px;">
+                </div>
+                <div class="col-auto">
                     <button type="button" class="bb bb-secondary" onclick="clearFilters()">
                         <i class="fa-solid fa-xmark me-1"></i>Clear
                     </button>
@@ -123,7 +131,7 @@ if (pendingList.isEmpty()) {
             billDateDisplay = outFmt2.format(inFmt2.parse(billDate));
         } catch (Exception _e) {}
 %>
-                    <tr data-invoice="<%=invoiceNo.toLowerCase()%>" data-customer="<%=custName.toLowerCase()%>">
+                    <tr data-invoice="<%=invoiceNo.toLowerCase()%>" data-customer="<%=custName.toLowerCase()%>" data-billdate="<%=billDate%>">
                         <td><%=i+1%></td>
                         <td><strong><%=invoiceNo%></strong></td>
                         <td><%=billDateDisplay%></td>
@@ -246,20 +254,28 @@ $(function() {
     });
     <% } %>
     $('#fltInvoice, #fltCustomer').on('input', applyFilters);
+    $('#fltFromDate, #fltToDate').on('change', applyFilters);
 });
 
 function applyFilters() {
     var inv = $('#fltInvoice').val().trim().toLowerCase();
     var cust = $('#fltCustomer').val().trim().toLowerCase();
+    var fromDate = $('#fltFromDate').val();
+    var toDate = $('#fltToDate').val();
     $('#pendingTable tbody tr').each(function() {
         var r = $(this);
+        var rowDate = (r.data('billdate') || '').toString();
+        var dateMatch = true;
+        if (fromDate) dateMatch = dateMatch && !!rowDate && rowDate >= fromDate;
+        if (toDate) dateMatch = dateMatch && !!rowDate && rowDate <= toDate;
         var match = (!inv  || (r.data('invoice')  || '').includes(inv))
-                 && (!cust || (r.data('customer') || '').includes(cust));
+                 && (!cust || (r.data('customer') || '').includes(cust))
+                 && dateMatch;
         r.toggle(match);
     });
 }
 function clearFilters() {
-    $('#fltInvoice, #fltCustomer').val('');
+    $('#fltInvoice, #fltCustomer, #fltFromDate, #fltToDate').val('');
     applyFilters();
 }
 

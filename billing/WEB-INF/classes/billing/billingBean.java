@@ -6991,6 +6991,7 @@ public int updateLrCopy(int id, int customerId, String customerName, String phon
     PreparedStatement ps = null;
     try {
         con = util.DBConnectionManager.getConnectionFromPool();
+                con.setAutoCommit(false);
         ps = con.prepareStatement(
             "UPDATE transport_lr_copy SET customer_id=?, customer_name=?, phone_number=?, lr_date=?, truck_no=?, "
           + "from_location=?, to_location=?, consignee_name=?, no_of_articles=?, description_text=?, weight_mt=?, "
@@ -7027,7 +7028,18 @@ public int updateLrCopy(int id, int customerId, String customerName, String phon
         ps.setString(27, deliverIn);
         ps.setString(28, lrDate);
         ps.setInt(29, id);
-        return ps.executeUpdate();
+        int rows = ps.executeUpdate();
+        if (rows <= 0) {
+            con.rollback();
+            return 0;
+        }
+        con.commit();
+        return rows;
+    } catch (Exception e) {
+        if (con != null) {
+            try { con.rollback(); } catch (Exception ex) { ; }
+        }
+        throw e;
     } finally {
         if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
         if (con != null) try { con.close(); } catch (Exception e)   { ; }

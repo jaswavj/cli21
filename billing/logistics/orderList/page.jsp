@@ -26,6 +26,35 @@ try {
     orders = bill.getLogisticsOrderList(fromDate, toDate);
 } catch (Exception ex) { ex.printStackTrace(); }
 
+double totalDpf = 0;
+double totalLh = 0;
+double totalLoad = 0;
+double totalUl = 0;
+double totalLc = 0;
+double totalHalting = 0;
+double totalCosting = 0;
+double totalProfit = 0;
+for (int i = 0; i < orders.size(); i++) {
+    try {
+        Vector t = (Vector) orders.get(i);
+        double dpfT = Double.parseDouble(t.get(8).toString());
+        double lhT = Double.parseDouble(t.get(9).toString());
+        double loadT = Double.parseDouble(t.get(10).toString());
+        double ulT = Double.parseDouble(t.get(11).toString());
+        double haltingT = Double.parseDouble(t.get(12).toString());
+        double lcT = Double.parseDouble(t.get(13).toString());
+        double costingT = lhT + loadT + ulT + lcT + haltingT;
+        totalDpf += dpfT;
+        totalLh += lhT;
+        totalLoad += loadT;
+        totalUl += ulT;
+        totalLc += lcT;
+        totalHalting += haltingT;
+        totalCosting += costingT;
+        totalProfit += (dpfT - costingT);
+    } catch (Exception _e) {}
+}
+
 String msg  = request.getParameter("msg");
 String type = request.getParameter("type");
 %>
@@ -90,6 +119,37 @@ String type = request.getParameter("type");
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Top totals -->
+    <div class="row g-3 mb-3" id="topTotalsWrap">
+        <div class="col-12 col-lg-3">
+            <div class="card mst-card h-100 text-white" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;">
+                <div class="card-body py-3 px-3 d-flex flex-column justify-content-center">
+                    <div class="small fw-semibold text-uppercase opacity-75 mb-1">DPF Total</div>
+                    <div class="fs-4 fw-bold" id="sumDpf">&#8377;<%=String.format("%,.2f", totalDpf)%></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card mst-card h-100">
+                <div class="card-body py-3 px-3">
+                    <div class="small fw-semibold text-uppercase text-muted mb-1">Balance Total</div>
+                    <div class="fs-4 fw-bold mb-2" id="sumBalanceTotal">&#8377;<%=String.format("%,.2f", totalCosting)%></div>
+                    <div class="small text-muted" id="sumBalanceParts">
+                        LH <%=String.format("%,.2f", totalLh)%> | LOAD <%=String.format("%,.2f", totalLoad)%> | U/L <%=String.format("%,.2f", totalUl)%> | LC <%=String.format("%,.2f", totalLc)%> | HALTING <%=String.format("%,.2f", totalHalting)%>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-3">
+            <div class="card mst-card h-100 text-white" style="background:linear-gradient(135deg,#16a34a,#166534);border:none;">
+                <div class="card-body py-3 px-3 d-flex flex-column justify-content-center">
+                    <div class="small fw-semibold text-uppercase opacity-75 mb-1">Total Profit</div>
+                    <div class="fs-4 fw-bold" id="sumProfit">&#8377;<%=String.format("%,.2f", totalProfit)%></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -225,6 +285,14 @@ if (orders.isEmpty()) {
                         data-supplier="<%=row.get(2).toString().toLowerCase()%>"
                         data-dest="<%=row.get(7).toString().toLowerCase()%>"
                         data-lrno="<%=row.get(4).toString().toLowerCase()%>"
+                        data-dpf="<%=String.format("%.2f", dpf)%>"
+                        data-lh="<%=String.format("%.2f", lh)%>"
+                        data-loadamt="<%=String.format("%.2f", load)%>"
+                        data-ul="<%=String.format("%.2f", ul)%>"
+                        data-lc="<%=String.format("%.2f", lc)%>"
+                        data-halting="<%=String.format("%.2f", hoting)%>"
+                        data-costing="<%=String.format("%.2f", costing)%>"
+                        data-profit="<%=String.format("%.2f", profit)%>"
                         data-status="<%=badgeTxt.toLowerCase()%>">
                         <td><%=sno%></td>
                         <td><%=lrDateDisplay%></td>
@@ -238,7 +306,7 @@ if (orders.isEmpty()) {
                         <td class="tbl-amt"><%=lcStr%></td>
                         <td class="tbl-amt"><%=hotingStr%></td>
                         <td class="tbl-amt"><%=costingStr%></td>
-                        <td class="tbl-amt <%=profitCls%>"><%=profitStr%></td>
+                        <td class="tbl-amt profit-cell <%=profitCls%>"><%=profitStr%></td>
                         <td><span class="badge <%=badgeCls%>"><%=badgeTxt%></span></td>
                         <td>
 <%  if (isBilled == 0) { %>
@@ -276,6 +344,20 @@ if (orders.isEmpty()) {
 }
 %>
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-end fw-bold">Total</td>
+                        <td class="tbl-amt fw-bold" id="totalDpfCell"><%=String.format("%.2f", totalDpf)%></td>
+                        <td class="tbl-amt fw-bold" id="totalLhCell"><%=String.format("%.2f", totalLh)%></td>
+                        <td class="tbl-amt fw-bold" id="totalLoadCell"><%=String.format("%.2f", totalLoad)%></td>
+                        <td class="tbl-amt fw-bold" id="totalUlCell"><%=String.format("%.2f", totalUl)%></td>
+                        <td class="tbl-amt fw-bold" id="totalLcCell"><%=String.format("%.2f", totalLc)%></td>
+                        <td class="tbl-amt fw-bold" id="totalHaltingCell"><%=String.format("%.2f", totalHalting)%></td>
+                        <td class="tbl-amt fw-bold" id="totalCostingCell"><%=String.format("%.2f", totalCosting)%></td>
+                        <td class="tbl-amt fw-bold" id="totalProfitCell"><%=String.format("%.2f", totalProfit)%></td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
             </table>
             </div>
         </div>
@@ -646,7 +728,46 @@ function applyFilters() {
             (!status   || r.data('status') === status);
         r.toggle(match);
     });
+    updateSummaryTotals();
 }
+
+function updateSummaryTotals() {
+    var dpf = 0, lh = 0, load = 0, ul = 0, lc = 0, halting = 0, costing = 0, profit = 0;
+    $('#orderTable tbody tr.view-row:visible').each(function() {
+        var r = $(this);
+        dpf     += parseFloat(r.data('dpf')) || 0;
+        lh      += parseFloat(r.data('lh')) || 0;
+        load    += parseFloat(r.data('loadamt')) || 0;
+        ul      += parseFloat(r.data('ul')) || 0;
+        lc      += parseFloat(r.data('lc')) || 0;
+        halting += parseFloat(r.data('halting')) || 0;
+        costing += parseFloat(r.data('costing')) || 0;
+        profit  += parseFloat(r.data('profit')) || 0;
+    });
+
+    $('#sumDpf').html('&#8377;' + dpf.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    $('#sumBalanceTotal').html('&#8377;' + costing.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    $('#sumBalanceParts').text(
+        'LH ' + lh.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        + ' | LOAD ' + load.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        + ' | U/L ' + ul.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        + ' | LC ' + lc.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        + ' | HALTING ' + halting.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    );
+    $('#sumProfit').html('&#8377;' + profit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+    $('#totalDpfCell').text(dpf.toFixed(2));
+    $('#totalLhCell').text(lh.toFixed(2));
+    $('#totalLoadCell').text(load.toFixed(2));
+    $('#totalUlCell').text(ul.toFixed(2));
+    $('#totalLcCell').text(lc.toFixed(2));
+    $('#totalHaltingCell').text(halting.toFixed(2));
+    $('#totalCostingCell').text(costing.toFixed(2));
+
+    var cls = profit >= 0 ? 'profit-pos' : 'profit-neg';
+    $('#totalProfitCell').removeClass('profit-pos profit-neg').addClass(cls).text(profit.toFixed(2));
+}
+
 function clearFilters() {
     $('#fltCustomer, #fltSupplier, #fltDest, #fltLrNo').val('');
     $('#fltStatus').val('');
@@ -655,6 +776,7 @@ function clearFilters() {
 $(function() {
     $('#fltCustomer, #fltSupplier, #fltDest, #fltLrNo').on('input', applyFilters);
     $('#fltStatus').on('change', applyFilters);
+    updateSummaryTotals();
 });
 
 function cancelOrderFromModal() {
