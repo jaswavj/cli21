@@ -92,6 +92,11 @@ String deliverInNorm = (deliverIn == null ? "" : deliverIn.trim().toLowerCase())
 boolean isDoorDelivery = "door delivery".equals(deliverInNorm);
 boolean isUnloadedByParty = "unloaded by party".equals(deliverInNorm);
 boolean isByTransporter = "by transporter".equals(deliverInNorm);
+String deliverSelected = "";
+if (isDoorDelivery) deliverSelected = "Door Delivery";
+else if (isUnloadedByParty) deliverSelected = "Unloading by Party";
+else if (isByTransporter) deliverSelected = "By Transporter";
+else if (deliverIn != null && !deliverIn.trim().isEmpty()) deliverSelected = deliverIn.trim();
 String companyName = co.get(0).toString();
 companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').replace('\r', ' ').trim();
 %>
@@ -215,16 +220,12 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
     .header-divider + .title-bar { margin-top:-1px; }
 
     .box { border:1px solid #000; margin-bottom:0; }
-    .top-box { display:flex; border:1px solid #000; margin-bottom:0; }
-    .top-box + .box { border-top:0; }
-    .top-left { width:58%; border-right:1px solid #000; }
-    .top-right { width:42%; }
-    .top-cell { border-bottom:1px solid #000; padding:7px 9px; }
-    .top-left .top-cell:last-child, .top-right .top-cell:last-child { border-bottom:none; }
-    .top-right-row { display:flex; border-bottom:1px solid #000; }
-    .top-right-row:last-child { border-bottom:none; }
-    .top-right-row .lbl-cell { width:42%; border-right:1px solid #000; padding:8px 10px; font-size:12px; text-transform:uppercase; color:#0b2f63; font-weight:700; line-height:1.25; }
-    .top-right-row .val-cell { width:58%; padding:8px 10px; font-size:15px; font-weight:700; line-height:1.25; color:#0b2f63; }
+    .info-row .cell { width:33.33%; }
+    .route-row .cell { width:50%; }
+    .info-row .inline-pair,
+    .route-row .inline-pair { margin-bottom:0; }
+    .info-row .val,
+    .route-row .val { font-size:15px; font-weight:700; min-height:0; }
     .row { display:flex; }
     .cell { border-right:1px solid #000; border-bottom:1px solid #000; padding:7px 9px; font-size:13px; }
     .cell:last-child { border-right:none; }
@@ -269,12 +270,24 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
         word-break:break-word;
     }
 
-    .w40 { width:40%; } .w60 { width:60%; } .w25 { width:25%; } .w20 { width:20%; } .w15 { width:15%; } .w35 { width:35%; } .w50 { width:50%; }
+    .w40 { width:40%; } .w60 { width:60%; } .w25 { width:25%; } .w20 { width:20%; } .w15 { width:15%; } .w35 { width:35%; } .w33 { width:33.33%; } .w50 { width:50%; }
 
     table.lr-table { width:100%; border-collapse:collapse; margin-top:0; }
     .lr-table th, .lr-table td { border:1px solid #000; padding:7px 9px; font-size:13px; vertical-align:top; color:#0b2f63; }
     .lr-table th { background:#ececec; text-transform:none; font-size:12px; font-weight:700; text-align:center; }
     .lr-table td:nth-child(1), .lr-table td:nth-child(2) { text-align:center; }
+    .lr-table td.articles-col { padding:0; vertical-align:top; }
+    .articles-count { padding:7px 9px; border-bottom:1px solid #000; font-weight:700; }
+    .articles-inwords-head {
+        background:#ececec;
+        border-bottom:1px solid #000;
+        padding:7px 9px;
+        font-size:12px;
+        font-weight:700;
+        text-align:center;
+        color:#0b2f63;
+    }
+    .articles-inwords-val { padding:7px 9px; font-size:13px; text-align:center; }
 
     .mode-grid { display:grid; grid-template-columns: 1fr; gap:2px; }
     .mode-item { border:1px solid #777; padding:5px 7px; font-size:12px; color:#0b2f63; }
@@ -289,6 +302,14 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
         padding:7px 9px;
         vertical-align:top;
     }
+    .detail-grid td.detail-split-cell { padding:0; }
+    .detail-half-row { display:flex; height:100%; }
+    .detail-half-col {
+        width:50%;
+        padding:7px 9px;
+        border-right:1px solid #000;
+    }
+    .detail-half-col:last-child { border-right:none; }
     .detail-lbl {
         font-size:12px;
         color:#0b2f63;
@@ -310,6 +331,13 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
         white-space:normal;
         overflow-wrap:anywhere;
         word-break:break-word;
+    }
+    .deliver-selected {
+        font-weight:700;
+        text-transform:uppercase;
+        font-size:12px;
+        line-height:1.35;
+        color:#0b2f63;
     }
     .deliver-in-grid {
         margin-top:6px;
@@ -364,11 +392,47 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
     }
     .print-spacer { display:none; }
 
+    .body-with-gst {
+        display:flex;
+        align-items:stretch;
+        margin-top:-1px;
+    }
+    .body-main {
+        flex:1;
+        min-width:0;
+        display:flex;
+        flex-direction:column;
+    }
+    .gst-vertical-strip {
+        width:26px;
+        flex-shrink:0;
+        border:1px solid #000;
+        border-left:1px solid #000;
+        margin-left:-1px;
+        background:#fff;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:6px 2px;
+    }
+    .gst-vertical-text {
+        writing-mode:vertical-rl;
+        transform:rotate(180deg);
+        font-size:9px;
+        font-weight:700;
+        text-transform:uppercase;
+        letter-spacing:0.3px;
+        color:#0b2f63;
+        line-height:1.15;
+        text-align:center;
+        white-space:nowrap;
+    }
+
     /* Join adjacent section borders as one continuous form */
-    .title-bar + .top-box,
-    .box + table.lr-table,
-    table.lr-table + .box,
-    table.lr-table + .footer-sign {
+    .title-bar + .box,
+    .box + .body-with-gst,
+    .body-main table.lr-table + .box,
+    .body-with-gst + .footer-sign {
         margin-top: -1px;
     }
 
@@ -455,58 +519,67 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
 
     <div class="title-bar"><span class="copy-part"><%=copyTitleHeading%></span><span class="risk-part"> | BOOKED AT OWNER'S RISK</span></div>
 
-    <div class="top-box">
-        <div class="top-left">
-            <div class="top-cell">
+    <div class="box">
+        <div class="row info-row">
+            <div class="cell w33">
+                <div class="inline-pair">
+                    <span class="lbl">LR No :</span>
+                    <span class="val"><%=lrNo%></span>
+                </div>
+            </div>
+            <div class="cell w33">
+                <div class="inline-pair">
+                    <span class="lbl">Date :</span>
+                    <span class="val"><%=lrDate%></span>
+                </div>
+            </div>
+            <div class="cell w33">
+                <div class="inline-pair">
+                    <span class="lbl">Truck No :</span>
+                    <span class="val"><%=truckNo%></span>
+                </div>
+            </div>
+        </div>
+        <div class="row route-row">
+            <div class="cell w50">
+                <div class="inline-pair">
+                    <span class="lbl">From :</span>
+                    <span class="val"><%=fromLocation%></span>
+                </div>
+            </div>
+            <div class="cell w50">
+                <div class="inline-pair">
+                    <span class="lbl">To :</span>
+                    <span class="val"><%=toLocation%></span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="cell w50">
                 <div class="inline-pair">
                     <span class="lbl">Consignor Name</span>
                     <span class="val"><%=customerName%></span>
                 </div>
                 <div class="inline-pair">
-                    <span class="lbl">Address / Phone</span>
+                    <span class="lbl">Address</span>
                     <span class="val"><%= (customerAddress == null ? "" : customerAddress.replace("\r", " ").replace("\n", " ")) %><% if (phone != null && !phone.trim().isEmpty()) { %> / <%=phone%><% } %></span>
                 </div>
             </div>
-        </div>
-        <div class="top-right">
-            <div class="top-right-row">
-                <div class="lbl-cell">LR No</div>
-                <div class="val-cell"><%=lrNo%></div>
-            </div>
-            <div class="top-right-row">
-                <div class="lbl-cell">Date</div>
-                <div class="val-cell"><%=lrDate%></div>
-            </div>
-            <div class="top-right-row">
-                <div class="lbl-cell">Truck No</div>
-                <div class="val-cell"><%=truckNo%></div>
-            </div>
-            <div class="top-right-row">
-                <div class="lbl-cell">From</div>
-                <div class="val-cell"><%=fromLocation%></div>
-            </div>
-            <div class="top-right-row">
-                <div class="lbl-cell">To</div>
-                <div class="val-cell"><%=toLocation%></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="box">
-        <div class="row">
-            <div class="cell w100" style="width:100%;">
+            <div class="cell w50">
                 <div class="inline-pair">
                     <span class="lbl">Consignee Name</span>
                     <span class="val"><%=consigneeName%></span>
                 </div>
                 <div class="inline-pair">
-                    <span class="lbl">Consignee Address</span>
+                    <span class="lbl">Address</span>
                     <span class="val"><%= (consigneeAddress == null ? "" : consigneeAddress.replace("\r", " ").replace("\n", " ")) %></span>
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="body-with-gst">
+        <div class="body-main">
     <table class="lr-table">
         <thead>
             <tr>
@@ -517,7 +590,11 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
         </thead>
         <tbody>
             <tr>
-                <td><%=noOfArticles%></td>
+                <td class="articles-col">
+                    <div class="articles-count"><%=noOfArticles%></div>
+                    <div class="articles-inwords-head">(In Words)</div>
+                    <div class="articles-inwords-val"><%=amountInWords%></div>
+                </td>
                 <td><%=descriptionText%></td>
                 <td>
                     <div class="mode-grid">
@@ -534,39 +611,46 @@ companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').r
     <div class="box">
         <table class="detail-grid">
             <tr>
-                <td style="width:30%;"><span class="detail-lbl">In Words</span><div class="detail-val"><%=amountInWords%></div></td>
-                <td style="width:30%;"><span class="detail-lbl">D.C No</span><div class="detail-val"><%=dcNo%></div></td>
-                <td style="width:20%;"><span class="detail-lbl">Date</span><div class="detail-val"><%=invDate%></div></td>
-                <td style="width:20%;"><span class="detail-lbl">Weight (M.T)</span><div class="detail-val"><%=weightMt%></div></td>
-            </tr>
-            <tr>
-                <td colspan="2"><span class="detail-lbl">Declared Value Rs</span><div class="detail-val"><%=declaredValueRs%></div></td>
-                <td colspan="2"><span class="detail-lbl">PNL Seal No</span><div class="detail-val"><%=pnlSealNo%></div></td>
-            </tr>
-            <tr>
-                <td colspan="2" rowspan="2"><span class="detail-lbl">Inv No</span><div class="detail-val inv-wrap"><%=invNoDisplay%></div></td>
-                <td colspan="2"><span class="detail-lbl">Material Received Date</span><div class="detail-val"><%=materialReceivedDate%></div></td>
-            </tr>
-            <tr>
-                <td colspan="2"><span class="detail-lbl">D.L No</span><div class="detail-val"><%=pnlNo%></div></td>
-            </tr>
-            <tr>
-                <td colspan="2"><span class="detail-lbl">Driver Name</span><div class="detail-val"><%=driverName%></div></td>
-                <td colspan="2">
-                    <span class="detail-lbl">Type of Vehicle</span>
-                    <div class="detail-val"><%=vehicleType%></div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="4" style="padding:0;">
-                    <div class="deliver-in-grid" style="margin-top:0; border:0;">
-                        <div class="deliver-opt"><span class="tick-mark"><%= isDoorDelivery ? "&#10003;" : "" %></span>Door Delivery</div>
-                        <div class="deliver-opt"><span class="tick-mark"><%= isUnloadedByParty ? "&#10003;" : "" %></span>Unloading by Party</div>
-                        <div class="deliver-opt"><span class="tick-mark"><%= isByTransporter ? "&#10003;" : "" %></span>By Transporter</div>
+                <td style="width:50%;"><span class="detail-lbl">D.C No</span><div class="detail-val"><%=dcNo%></div></td>
+                <td style="width:50%;" class="detail-split-cell">
+                    <div class="detail-half-row">
+                        <div class="detail-half-col">
+                            <span class="detail-lbl">Date</span>
+                            <div class="detail-val"><%=invDate%></div>
+                        </div>
+                        <div class="detail-half-col">
+                            <span class="detail-lbl">Weight (M.T)</span>
+                            <div class="detail-val"><%=weightMt%></div>
+                        </div>
                     </div>
                 </td>
             </tr>
+            <tr>
+                <td style="width:50%;" rowspan="3"><span class="detail-lbl">Inv No</span><div class="detail-val inv-wrap"><%=invNoDisplay%></div></td>
+                <td style="width:50%;"><span class="detail-lbl">Declared Value Rs</span><div class="detail-val"><%=declaredValueRs%></div></td>
+            </tr>
+            <tr>
+                <td style="width:50%;"><span class="detail-lbl">PNL Seal No</span><div class="detail-val"><%=pnlSealNo%></div></td>
+            </tr>
+            <tr>
+                <td style="width:50%;"><span class="detail-lbl">Material Received Date</span><div class="detail-val"><%=materialReceivedDate%></div></td>
+            </tr>
+            <tr>
+                <td style="width:50%;"><span class="detail-lbl">Type of Vehicle</span><div class="detail-val"><%=vehicleType%></div></td>
+                <td style="width:50%;"><span class="detail-lbl">Driver Name</span><div class="detail-val"><%=driverName%></div></td>
+            </tr>
+            <tr>
+                <td style="width:50%;">
+                    <div class="deliver-selected"><% if (!deliverSelected.isEmpty()) { %><span class="tick-mark">&#10003;</span><% } %><%=deliverSelected%></div>
+                </td>
+                <td style="width:50%;"><span class="detail-lbl">D.L No</span><div class="detail-val"><%=pnlNo%></div></td>
+            </tr>
         </table>
+    </div>
+        </div>
+        <div class="gst-vertical-strip">
+            <div class="gst-vertical-text">GST PAID BY SERVICE RECEIVER BY REVERSE CHARGE MECHANISM</div>
+        </div>
     </div>
 
     <div class="print-spacer"></div>
