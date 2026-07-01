@@ -94,15 +94,18 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
                         </div>
                         <div class="col-md-3">
                             <label class="field-title">Description</label>
-                            <input type="text" class="form-control fg-inp" id="descriptionText" name="descriptionText" value="Said to Contain">
+                            <input type="text" class="form-control fg-inp" id="descriptionText" name="descriptionText" value="">
                         </div>
                         <div class="col-md-2">
                             <label class="field-title">Weight (M.T)</label>
                             <input type="text" class="form-control fg-inp" id="weightMt" name="weightMt">
                         </div>
                         <div class="col-md-4">
-                            <label class="field-title">Mode of Payment (Blank)</label>
-                            <input type="text" class="form-control fg-inp" id="modePayment1" name="modePayment1" placeholder="Any text">
+                            <label class="field-title">Mode of Payment</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="toBeBilledInChennai" name="toBeBilledInChennai" value="1">
+                                <label class="form-check-label" for="toBeBilledInChennai">To be billed in Chennai</label>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <label class="field-title">FREIGHT AMOUNT Rs</label>
@@ -126,7 +129,10 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
 
                     <div class="col-md-3"><label class="field-title">Inv No</label><input type="text" class="form-control fg-inp" id="invNo" name="invNo"></div>
                     <div class="col-md-3"><label class="field-title">Inv Date 2</label><input type="date" class="form-control fg-inp" id="invDate2" name="invDate2"></div>
-                    <div class="col-md-3"><label class="field-title">Declared Value Rs</label><input type="text" class="form-control fg-inp" id="declaredValueRs" name="declaredValueRs"></div>
+                    <div class="col-md-6">
+                        <label class="field-title">Declared Value Rs</label>
+                        <textarea class="form-control fg-inp" id="declaredValueRs" name="declaredValueRs" rows="2" placeholder="Single text or multiple amounts separated by comma / new line"></textarea>
+                    </div>
                     <div class="col-md-3"><label class="field-title">PNL Seal No</label><input type="text" class="form-control fg-inp" id="pnlSealNo" name="pnlSealNo"></div>
 
                     <div class="col-md-3"><label class="field-title">Material Received Date</label><input type="date" class="form-control fg-inp" id="materialReceivedDate" name="materialReceivedDate"></div>
@@ -179,6 +185,7 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
         $('#customerId').val('');
         $('#lrDate').val('<%=today%>');
         $('#searchLrNo').val('');
+        $('#toBeBilledInChennai').prop('checked', false);
         $('#btnCancel').hide();
         enableSave();
     }
@@ -198,7 +205,6 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
             $('#customerId').val(ui.item.id);
             $('#customerName').val(ui.item.value);
             if (!$('#phoneNumber').val()) $('#phoneNumber').val(ui.item.phone || '');
-            if (!$('#consigneeName').val()) $('#consigneeName').val(ui.item.value);
             return false;
         }
     }).on('input', function() {
@@ -241,7 +247,7 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
             $('#noOfArticles').val(resp.noOfArticles);
             $('#descriptionText').val(resp.descriptionText);
             $('#weightMt').val(resp.weightMt);
-            $('#modePayment1').val(resp.modePayment1);
+            $('#toBeBilledInChennai').prop('checked', resp.toBeBilledInChennai === true || (resp.modePayment1 || '').toLowerCase().indexOf('billed in chennai') >= 0);
             $('#freightAmount').val(resp.freightAmount);
             $('#toPayAmount').val(resp.toPayAmount);
             $('#paidAmount').val(resp.paidAmount);
@@ -258,6 +264,7 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
             $('#vehicleType').val(resp.vehicleType);
             $('#deliverIn').val(resp.deliverIn);
 
+            saveDisabledAfterSave = false;
             $('#btnCancel').show();
             $('#btnSave').prop('disabled', resp.isCancelled == 1);
             setSaveState(resp.isCancelled == 1 ? 'Cancelled LR' : 'Edit Mode');

@@ -24,7 +24,7 @@
     String descriptionText = request.getParameter("descriptionText");
     String weightMt = request.getParameter("weightMt");
 
-    String modePayment1 = request.getParameter("modePayment1");
+    String modePayment1 = "1".equals(request.getParameter("toBeBilledInChennai")) ? "To be billed in Chennai" : "";
     String freightAmount = request.getParameter("freightAmount");
     String toPayAmount = request.getParameter("toPayAmount");
     String paidAmount = request.getParameter("paidAmount");
