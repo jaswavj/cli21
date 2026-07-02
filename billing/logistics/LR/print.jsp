@@ -296,35 +296,44 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
         min-width:0;
         word-break:break-word;
     }
-    .party-block {
-        display:grid;
-        grid-template-columns:auto 1fr;
-        column-gap:8px;
-        row-gap:4px;
-        align-items:start;
+    .field-split {
+        line-height:1.35;
     }
-    .party-lbl {
-        grid-column:1;
-        grid-row:1;
+    .field-split .field-lbl {
+        display:inline;
         font-size:12px;
-        font-weight:700;
-        text-transform:uppercase;
         color:#0b2f63;
-        white-space:nowrap;
-        line-height:1.1;
+        text-transform:uppercase;
+        font-weight:700;
+        line-height:1.25;
     }
-    .party-name {
-        grid-column:2;
-        grid-row:1;
+    .field-split .field-val {
+        display:inline;
+        font-size:15px;
+        font-weight:700;
+        line-height:1.35;
+        color:#0b2f63;
+        word-break:break-word;
+    }
+    .party-line {
+        line-height:1.35;
+        margin-bottom:4px;
+    }
+    .party-line .party-lbl {
+        display:inline;
+        font-size:12px;
+        color:#0b2f63;
+        text-transform:uppercase;
+        font-weight:700;
+    }
+    .party-line .party-name {
+        display:inline;
         font-size:15px;
         font-weight:700;
         color:#0b2f63;
-        line-height:1.35;
         word-break:break-word;
     }
-    .party-addr {
-        grid-column:2;
-        grid-row:2;
+    .party-block .party-addr {
         font-size:15px;
         font-weight:700;
         color:#0b2f63;
@@ -449,7 +458,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     .footer-sign { margin-top:0; border:1px solid #000; border-top:0; padding:0; min-height:116px; }
     .footer-grid { display:flex; gap:0; min-height:116px; height:100%; align-items:stretch; }
     .recv-box { width:60%; border-right:1px solid #000; padding:10px; }
-    .recv-title { color:#8d1f1f; font-weight:700; text-transform:uppercase; font-size:12px; margin-bottom:8px; }
+    .recv-title { color:#8d1f1f; font-weight:800; text-transform:uppercase; font-size:12px; margin-bottom:8px; text-align:center; }
     .recv-oval {
         height:62px;
         width:94%;
@@ -460,7 +469,15 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     .clerk-box { width:40%; display:flex; flex-direction:column; justify-content:flex-end; padding:10px; }
     .sign-line { border-top:1px solid #000; text-align:center; font-size:11px; font-weight:700; padding-top:4px; }
 
-    .print-note { text-align:center; font-size:11px; color:#666; margin-top:6px; }
+    .print-note {
+        text-align:center;
+        font-size:11px;
+        color:#666;
+        border:1px solid #000;
+        border-top:0;
+        padding:4px;
+        margin-top:0;
+    }
     .footer-bottom {
         display:flex;
         justify-content:space-between;
@@ -564,6 +581,9 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     .body-with-gst + .footer-sign {
         margin-top: -1px;
     }
+    .footer-sign + .print-note {
+        margin-top: -1px;
+    }
 
     .no-print { background:#343a40; color:#fff; padding:10px 16px; display:flex; gap:10px; align-items:center; }
     .no-print button { border:none; border-radius:6px; padding:7px 14px; font-size:13px; cursor:pointer; }
@@ -662,51 +682,48 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     <div class="box">
         <div class="row info-row">
             <div class="cell w33">
-                <div class="inline-pair">
-                    <span class="lbl">LR No :</span>
-                    <span class="val"><%=lrNo%></span>
+                <div class="field-split">
+                    <span class="field-lbl">LR No :</span> <span class="field-val"><%=lrNo%></span>
                 </div>
             </div>
             <div class="cell w33">
-                <div class="inline-pair">
-                    <span class="lbl">Date :</span>
-                    <span class="val"><%=lrDate%></span>
+                <div class="field-split">
+                    <span class="field-lbl">Date :</span> <span class="field-val"><%=lrDate%></span>
                 </div>
             </div>
             <div class="cell w33">
-                <div class="inline-pair">
-                    <span class="lbl">Truck No :</span>
-                    <span class="val"><%=truckNo%></span>
+                <div class="field-split">
+                    <span class="field-lbl">Truck No :</span> <span class="field-val"><%=truckNo%></span>
                 </div>
             </div>
         </div>
         <div class="row route-row">
             <div class="cell w50">
-                <div class="inline-pair">
-                    <span class="lbl">From :</span>
-                    <span class="val"><%=fromLocation%></span>
+                <div class="field-split">
+                    <span class="field-lbl">From :</span> <span class="field-val"><%=fromLocation%></span>
                 </div>
             </div>
             <div class="cell w50">
-                <div class="inline-pair">
-                    <span class="lbl">To :</span>
-                    <span class="val"><%=toLocation%></span>
+                <div class="field-split">
+                    <span class="field-lbl">To :</span> <span class="field-val"><%=toLocation%></span>
                 </div>
             </div>
         </div>
         <div class="row">
             <div class="cell w50">
                 <div class="party-block">
-                    <span class="party-lbl">Consignor Name &amp; Address :</span>
-                    <span class="party-name"><%=customerName%></span>
-                    <span class="party-addr"><%= (customerAddress == null ? "" : customerAddress.replace("\r", " ").replace("\n", " ")) %><% if (phone != null && !phone.trim().isEmpty()) { %> / <%=phone%><% } %></span>
+                    <div class="party-line">
+                        <span class="party-lbl">Consignor Name &amp; Address :</span> <span class="party-name"><%=customerName%></span>
+                    </div>
+                    <div class="party-addr"><%= (customerAddress == null ? "" : customerAddress.replace("\r", " ").replace("\n", " ")) %><% if (phone != null && !phone.trim().isEmpty()) { %> / <%=phone%><% } %></div>
                 </div>
             </div>
             <div class="cell w50">
                 <div class="party-block">
-                    <span class="party-lbl">Consignee Name &amp; Address :</span>
-                    <span class="party-name"><%=consigneeName%></span>
-                    <span class="party-addr"><%= (consigneeAddress == null ? "" : consigneeAddress.replace("\r", " ").replace("\n", " ")) %></span>
+                    <div class="party-line">
+                        <span class="party-lbl">Consignee Name &amp; Address :</span> <span class="party-name"><%=consigneeName%></span>
+                    </div>
+                    <div class="party-addr"><%= (consigneeAddress == null ? "" : consigneeAddress.replace("\r", " ").replace("\n", " ")) %></div>
                 </div>
             </div>
         </div>
@@ -729,7 +746,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
                 <td>
                     <div class="mode-grid">
                         <% if (toBeBilledInChennai) { %>
-                        <div class="mode-item"><span class="tick-mark">&#10003;</span> To be billed in Chennai</div>
+                        <div class="mode-item"><span class="tick-mark">&#10003;</span> To Be Billed In Chennai</div>
                         <% } %>
                         <div class="mode-item">Freight Amount Rs: <%=freightAmount%></div>
                         <div class="mode-item">To Pay Amount Rs: <%=toPayAmount%></div>
@@ -811,6 +828,8 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
             </div>
         </div>
     </div>
+
+    <div class="print-note">This is a Computer Generated ELR. Signature Not Required</div>
 
     <div class="footer-bottom">
         <div class="footer-bottom-left">Powered by JASXBILL - 8667214152</div>
