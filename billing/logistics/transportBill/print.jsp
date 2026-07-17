@@ -61,7 +61,31 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #000; background: #fff; line-height: 1.35; }
 
-    .page { width: 210mm; margin: 0 auto; padding: 9mm 11mm; }
+    .page { width: 210mm; margin: 0 auto 12px; padding: 9mm 11mm; }
+    .page.sheet {
+        display: flex;
+        flex-direction: column;
+        min-height: 297mm;
+        position: relative;
+    }
+    .print-letterhead {
+        position: relative;
+        flex-shrink: 0;
+        margin-bottom: 4px;
+    }
+    .page-number {
+        display: none;
+    }
+    .page-count {
+        position: absolute;
+        bottom: 2mm;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        font-weight: 700;
+        color: #555;
+        z-index: 2000;
+    }
 
     /* ── Header ── */
     .print-header {
@@ -308,6 +332,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
 
     /* ── Bill table ── */
     .bill-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .bill-table thead { display: table-header-group; }
     .bill-table th, .bill-table td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; }
     .bill-table thead th { background: #f5f5f5; font-size: 13px; font-weight: 700; text-align: center; white-space: nowrap; }
     .bill-table tbody td { border-top: none; border-bottom: none; }
@@ -348,10 +373,35 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
     .footer-sign .sign-line { border-top: 1px solid #000; font-size: 12px; font-weight: 700; padding-top: 3px; }
 
     .words-row { border: 1px solid #000; border-top: none; padding: 6px 10px; font-size: 13px; font-weight: 600; margin-bottom: 0; }
+    .page-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    .page-table-wrap {
+        flex-shrink: 0;
+    }
     .print-spacer {
-        display: none;
+        flex: 1;
+        border-left: 1px solid #000;
+        border-right: 1px solid #000;
+        min-height: 12mm;
+    }
+    .bill-footer-wrap {
+        flex-shrink: 0;
     }
     .print-note { text-align: center; font-size: 12px; color: #666; border: 1px solid #000; border-top: none; padding: 3px; margin-top: 0; }
+    #bill-root {
+        position: absolute;
+        left: -10000px;
+        top: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+    .page-table-wrap .bill-table tbody tr:last-child td {
+        border-bottom: 1px solid #000;
+    }
 
     @media print {
         @page { size: A4; margin: 0; }
@@ -362,26 +412,36 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
             -webkit-print-color-adjust: exact;
         }
         .no-print { display: none !important; }
-        .page {
-            width: 100%;
-            margin: 0;
+        #bill-root { display: none !important; }
+        .page.sheet {
+            width: 210mm;
+            height: 297mm;
+            min-height: 297mm;
+            max-height: 297mm;
+            margin: 0 auto;
             padding: 0 10mm 3mm;
-            min-height: calc(297mm - 3mm);
-            display: flex;
-            flex-direction: column;
+            page-break-after: always;
+            break-after: page;
+            overflow: hidden;
+            position: relative;
+        }
+        .page-count {
+            bottom: 2mm;
+            left: 50%;
+            transform: translateX(-50%);
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        .page.sheet:last-child {
+            page-break-after: auto;
+            break-after: auto;
         }
         .print-header,
         .header-divider {
             margin-left: -10mm;
             margin-right: -10mm;
         }
-        .print-spacer {
-            display: block;
-            flex: 1;
-            border-left: 1px solid #000;
-            border-right: 1px solid #000;
-        }
-        .footer-row { margin-top: 0; }
+        .bill-table tbody tr { page-break-inside: avoid; break-inside: avoid; }
     }
 </style>
 </head>
@@ -390,7 +450,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
 <!-- Print Button (hidden when printing) -->
 <div class="no-print" style="padding:10px 20px;background:#343a40;display:flex;align-items:center;gap:12px;">
     <span style="color:#fff;font-weight:600;font-size:14px;">Transportation Bill — <%= hdr.get(0) %></span>
-    <button onclick="window.print()" style="background:#198754;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;">
+    <button onclick="paginateBill(); window.print()" style="background:#198754;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;">
         &#128424; Print
     </button>
     <button onclick="window.close()" style="background:#6c757d;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;">
@@ -398,10 +458,12 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
     </button>
 </div>
 
-<div class="page">
+<div id="bill-root" class="page">
 
-    <!-- ── Header ── -->
-    <div class="print-header">
+    <div class="print-letterhead">
+        <div class="page-number"></div>
+        <!-- ── Header ── -->
+        <div class="print-header">
         <div class="header-main">
             <div class="logo-wrap">
                 <%
@@ -438,6 +500,10 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         </div>
     </div>
     <div class="header-divider"></div>
+    </div>
+
+    <div class="page-content">
+    <div class="first-page-block">
     <!-- ── Title ── -->
     <div class="title-bar">
         Transportation Bill
@@ -490,6 +556,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
 
     <!-- ── GST notice ── -->
     <div class="gst-notice">GST PAID BY SERVICE RECEIVER BY REVERSE CHARGE MECHANISM</div>
+    </div><!-- /first-page-block -->
 
     <!-- ── Bill Table ── -->
     <table class="bill-table">
@@ -575,12 +642,11 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
 
     <!-- ── Amount in words ── -->
     <%
-    // Simple number-to-words in Indian format
     long rupees = (long) runningTotal;
     String inWords = amountToWords(rupees) + " Only.";
     %>
+    <div class="bill-footer-wrap">
     <div class="words-row">Rupees <%= inWords %></div>
-    <div class="print-spacer"></div>
 
     <!-- ── Footer ── -->
     <div class="footer-row">
@@ -601,8 +667,13 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
     <div style="text-align:right;font-size:9px;color:#999;margin-top:3px;padding-right:4px;">
         Powered by JASXBILL &nbsp;|&nbsp; 8667214152
     </div>
+    </div><!-- /bill-footer-wrap -->
 
-</div><!-- /page -->
+    </div><!-- /page-content -->
+
+</div><!-- /bill-root -->
+
+<div id="pages-container"></div>
 
 <%!
 // ── Amount-to-words helper ─────────────────────────────────────
@@ -624,7 +695,109 @@ static String amountToWords(long n) {
 }
 %>
 <script>
+function paginateBill() {
+    var MM_TO_PX = 96 / 25.4;
+    var PAGE_H = Math.round(297 * MM_TO_PX) - 6;
+
+    var root = document.getElementById('bill-root');
+    var container = document.getElementById('pages-container');
+    if (!root || !container) return;
+
+    var letterheadTpl = root.querySelector('.print-letterhead');
+    var firstBlock = root.querySelector('.first-page-block');
+    var table = root.querySelector('.bill-table');
+    var footerWrap = root.querySelector('.bill-footer-wrap');
+    if (!letterheadTpl || !table || !footerWrap) return;
+
+    var theadHtml = table.querySelector('thead').outerHTML;
+    var tbody = table.querySelector('tbody');
+    var dataRows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
+    var totalRow = tbody.querySelector('tr.total-row');
+
+    var lh = letterheadTpl.offsetHeight;
+    var firstH = firstBlock ? firstBlock.offsetHeight : 0;
+    var th = table.querySelector('thead').offsetHeight;
+    var rowH = 30;
+    if (dataRows.length) {
+        var totalRowH = 0;
+        dataRows.forEach(function(row) { totalRowH += row.offsetHeight; });
+        rowH = Math.max(24, Math.round(totalRowH / dataRows.length));
+    }
+    var footerH = footerWrap.offsetHeight + (totalRow ? totalRow.offsetHeight : 0);
+
+    var singleMax = Math.max(1, Math.floor((PAGE_H - lh - firstH - th - footerH) / rowH));
+    var firstMax = Math.max(1, Math.floor((PAGE_H - lh - firstH - th) / rowH) - 1);
+    var contMax = Math.max(1, Math.floor((PAGE_H - lh - th) / rowH) - 1);
+    var lastMax = Math.max(1, Math.floor((PAGE_H - lh - th - footerH) / rowH) - 1);
+
+    var remaining = dataRows.slice();
+    var pagePlans = [];
+
+    if (remaining.length <= singleMax) {
+        pagePlans.push({ rows: remaining.slice(), isFirst: true, isLast: true });
+    } else {
+        pagePlans.push({ rows: remaining.splice(0, firstMax), isFirst: true, isLast: false });
+        while (remaining.length > lastMax) {
+            pagePlans.push({ rows: remaining.splice(0, contMax), isFirst: false, isLast: false });
+        }
+        pagePlans.push({ rows: remaining.slice(), isFirst: false, isLast: true });
+    }
+
+    var totalPages = pagePlans.length;
+    container.innerHTML = '';
+
+    pagePlans.forEach(function(plan, idx) {
+        var page = document.createElement('div');
+        page.className = 'page sheet';
+
+        var lhClone = letterheadTpl.cloneNode(true);
+        page.appendChild(lhClone);
+
+        var content = document.createElement('div');
+        content.className = 'page-content';
+
+        if (plan.isFirst && firstBlock) {
+            content.appendChild(firstBlock.cloneNode(true));
+        }
+
+        var tableWrap = document.createElement('div');
+        tableWrap.className = 'page-table-wrap';
+        var tbl = document.createElement('table');
+        tbl.className = 'bill-table';
+        tbl.innerHTML = theadHtml;
+        var newBody = document.createElement('tbody');
+        plan.rows.forEach(function(row) {
+            newBody.appendChild(row.cloneNode(true));
+        });
+        if (plan.isLast && totalRow) {
+            newBody.appendChild(totalRow.cloneNode(true));
+        }
+        tbl.appendChild(newBody);
+        tableWrap.appendChild(tbl);
+        content.appendChild(tableWrap);
+
+        if (plan.isLast) {
+            var spacer = document.createElement('div');
+            spacer.className = 'print-spacer';
+            content.appendChild(spacer);
+            content.appendChild(footerWrap.cloneNode(true));
+        }
+
+        page.appendChild(content);
+
+        var pageCount = document.createElement('div');
+        pageCount.className = 'page-count';
+        pageCount.textContent = (idx + 1) + ' / ' + totalPages;
+        page.appendChild(pageCount);
+
+        container.appendChild(page);
+    });
+
+    root.style.display = 'none';
+}
+
 window.onload = function() {
+    paginateBill();
     window.print();
 };
 window.onafterprint = function() {
