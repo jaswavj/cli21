@@ -91,6 +91,9 @@ String type = request.getParameter("type");
             <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Pending Bills
                 <span class="badge bg-secondary ms-2"><%= pendingList.size() %></span>
             </h5>
+            <button type="button" class="bb bb-success" onclick="downloadPendingExcel()">
+                <i class="fa-solid fa-file-excel me-1"></i>Download Excel
+            </button>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -277,6 +280,73 @@ function applyFilters() {
 function clearFilters() {
     $('#fltInvoice, #fltCustomer, #fltFromDate, #fltToDate').val('');
     applyFilters();
+}
+
+function csvCell(value) {
+    var text = (value || '').toString().replace(/\r?\n|\r/g, ' ').trim();
+    return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function downloadPendingExcel() {
+    var table = document.getElementById('pendingTable');
+    if (!table) return;
+
+    var excludeIndexes = [];
+    var headCells = table.querySelectorAll('thead th');
+    headCells.forEach(function(th, idx) {
+        var txt = (th.textContent || '').trim().toLowerCase();
+        if (txt === 'action') excludeIndexes.push(idx);
+    });
+
+    var lines = [];
+    var headerRow = [];
+    headCells.forEach(function(th, idx) {
+        if (excludeIndexes.indexOf(idx) !== -1) return;
+        headerRow.push(csvCell(th.textContent));
+    });
+    lines.push(headerRow.join(','));
+
+    var exported = 0;
+    var totalAmt = 0, paidAmt = 0, balAmt = 0;
+    $('#pendingTable tbody tr').each(function() {
+        var row = this;
+        if (!$(row).is(':visible')) return;
+        if (row.querySelector('td[colspan]')) return;
+
+        var rowCells = row.querySelectorAll('td');
+        var values = [];
+        rowCells.forEach(function(td, idx) {
+            if (excludeIndexes.indexOf(idx) !== -1) return;
+            values.push(csvCell(td.innerText));
+        });
+        if (values.length) {
+            lines.push(values.join(','));
+            exported++;
+            try { totalAmt += parseFloat((rowCells[4].innerText || '0').replace(/,/g, '')); } catch (_e) {}
+            try { paidAmt += parseFloat((rowCells[5].innerText || '0').replace(/,/g, '')); } catch (_e) {}
+            try { balAmt += parseFloat((rowCells[6].innerText || '0').replace(/,/g, '')); } catch (_e) {}
+        }
+    });
+
+    if (exported === 0) {
+        Swal.fire({ icon: 'info', title: 'No Data', text: 'No rows available to download.' });
+        return;
+    }
+
+    lines.push(['', '', '', csvCell('Total'), csvCell(totalAmt.toFixed(2)), csvCell(paidAmt.toFixed(2)), csvCell(balAmt.toFixed(2))].join(','));
+
+    var csv = '\uFEFF' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var fromDate = $('#fltFromDate').val() || 'all';
+    var toDate = $('#fltToDate').val() || 'all';
+    a.href = url;
+    a.download = 'pending-balance-list-' + fromDate + '-to-' + toDate + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function showCollect(billId, invoiceNo, customer, balance) {

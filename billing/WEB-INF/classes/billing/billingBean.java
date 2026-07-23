@@ -6792,7 +6792,22 @@ public Vector getLrCopyCustomerAutocomplete(String term) throws Exception {
 }
 
 /**
- * Generates next LR number in FY format: 0001, 0002... reset every financial year.
+ * Returns Indian financial year start year (April-March) for yyyy-MM-dd date.
+ */
+private int getFinancialYearStartYear(String dateRef) throws Exception {
+    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+    java.util.Date d = sdf.parse(dateRef);
+    java.util.Calendar cal = java.util.Calendar.getInstance();
+    cal.setTime(d);
+    int year = cal.get(java.util.Calendar.YEAR);
+    int month = cal.get(java.util.Calendar.MONTH) + 1;
+    return (month >= 4) ? year : (year - 1);
+}
+
+/**
+ * Generates next LR number in FY format.
+ * FY 2026-27 (Apr 2026 - Mar 2027): 5001, 5002, ...
+ * From FY 2027-28 onwards: resets to 0001, 0002, ...
  */
 public String getNextLrCopyNo(String entryDate) throws Exception {
     Connection con = null;
@@ -6805,24 +6820,29 @@ public String getNextLrCopyNo(String entryDate) throws Exception {
             ? entryDate.trim()
             : new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date());
 
+        int fyStartYear = getFinancialYearStartYear(dateRef);
+        // One-time series for current deployment FY; normal 0001 series from next FY
+        int baseNo = (fyStartYear == 2026) ? 5001 : 1;
+
         ps = con.prepareStatement(
-            "SELECT LPAD(IFNULL(MAX(CAST(lr_no AS UNSIGNED)),0) + 1, 4, '0') "
+            "SELECT LPAD(GREATEST(IFNULL(MAX(CAST(lr_no AS UNSIGNED)), 0) + 1, ?), 4, '0') "
           + "FROM transport_lr_copy "
           + "WHERE entry_date BETWEEN "
           + "      CASE WHEN MONTH(?) >= 4 THEN CONCAT(YEAR(?),'-04-01') ELSE CONCAT(YEAR(?) - 1,'-04-01') END "
           + "  AND CASE WHEN MONTH(?) >= 4 THEN CONCAT(YEAR(?) + 1,'-03-31') ELSE CONCAT(YEAR(?),'-03-31') END");
-        ps.setString(1, dateRef);
+        ps.setInt(1, baseNo);
         ps.setString(2, dateRef);
         ps.setString(3, dateRef);
         ps.setString(4, dateRef);
         ps.setString(5, dateRef);
         ps.setString(6, dateRef);
+        ps.setString(7, dateRef);
 
         rs = ps.executeQuery();
         if (rs.next()) {
             return rs.getString(1);
         }
-        return "0001";
+        return String.format("%04d", baseNo);
     } finally {
         if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
         if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }

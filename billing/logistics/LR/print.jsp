@@ -317,21 +317,23 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     }
     .party-line {
         line-height:1.35;
-        margin-bottom:4px;
+        margin-bottom:2px;
     }
     .party-line .party-lbl {
-        display:inline;
+        display:block;
         font-size:12px;
         color:#0b2f63;
         text-transform:uppercase;
         font-weight:700;
     }
-    .party-line .party-name {
-        display:inline;
+    .party-block .party-name {
+        display:block;
         font-size:15px;
         font-weight:700;
         color:#0b2f63;
         word-break:break-word;
+        line-height:1.35;
+        margin-bottom:2px;
     }
     .party-block .party-addr {
         font-size:15px;
@@ -345,12 +347,12 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     .w40 { width:40%; } .w60 { width:60%; } .w25 { width:25%; } .w20 { width:20%; } .w15 { width:15%; } .w35 { width:35%; } .w33 { width:33.33%; } .w50 { width:50%; }
 
     table.lr-table { width:100%; border-collapse:collapse; margin-top:0; }
-    .lr-table th, .lr-table td { border:1px solid #000; padding:7px 9px; font-size:13px; vertical-align:top; color:#0b2f63; }
-    .lr-table th { background:#ececec; text-transform:none; font-size:12px; font-weight:700; text-align:center; }
+    .lr-table th, .lr-table td { border:1px solid #000; padding:7px 9px; font-size:15px; font-weight:700; vertical-align:top; color:#0b2f63; }
+    .lr-table th { background:#ececec; text-transform:none; font-size:14px; font-weight:700; text-align:center; }
     .lr-table td:nth-child(1), .lr-table td:nth-child(2) { text-align:center; }
 
     .mode-grid { display:grid; grid-template-columns: 1fr; gap:2px; }
-    .mode-item { border:1px solid #777; padding:5px 7px; font-size:12px; color:#0b2f63; }
+    .mode-item { border:1px solid #777; padding:5px 7px; font-size:14px; font-weight:700; color:#0b2f63; }
 
     .detail-grid {
         width:100%;
@@ -713,16 +715,18 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
             <div class="cell w50">
                 <div class="party-block">
                     <div class="party-line">
-                        <span class="party-lbl">Consignor Name &amp; Address :</span> <span class="party-name"><%=customerName%></span>
+                        <span class="party-lbl">Consignor Name &amp; Address :</span>
                     </div>
+                    <div class="party-name"><%=customerName%></div>
                     <div class="party-addr"><%= (customerAddress == null ? "" : customerAddress.replace("\r", " ").replace("\n", " ")) %><% if (phone != null && !phone.trim().isEmpty()) { %> / <%=phone%><% } %></div>
                 </div>
             </div>
             <div class="cell w50">
                 <div class="party-block">
                     <div class="party-line">
-                        <span class="party-lbl">Consignee Name &amp; Address :</span> <span class="party-name"><%=consigneeName%></span>
+                        <span class="party-lbl">Consignee Name &amp; Address :</span>
                     </div>
+                    <div class="party-name"><%=consigneeName%></div>
                     <div class="party-addr"><%= (consigneeAddress == null ? "" : consigneeAddress.replace("\r", " ").replace("\n", " ")) %></div>
                 </div>
             </div>
