@@ -90,11 +90,11 @@ String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="field-title">No of Articles</label>
-                            <input type="text" class="form-control fg-inp" id="noOfArticles" name="noOfArticles">
+                            <textarea class="form-control fg-inp" id="noOfArticles" name="noOfArticles" rows="3" placeholder="No of Articles (multiple lines allowed)"></textarea>
                         </div>
                         <div class="col-md-3">
                             <label class="field-title">Description</label>
-                            <input type="text" class="form-control fg-inp" id="descriptionText" name="descriptionText" value="">
+                            <textarea class="form-control fg-inp" id="descriptionText" name="descriptionText" rows="3" placeholder="Description (multiple lines allowed)"></textarea>
                         </div>
                         <div class="col-md-2">
                             <label class="field-title">Weight (M.T)</label>

@@ -284,7 +284,7 @@ if (orders.isEmpty()) {
                         data-customer="<%=row.get(6).toString().toLowerCase()%>"
                         data-supplier="<%=row.get(2).toString().toLowerCase()%>"
                         data-dest="<%=row.get(7).toString().toLowerCase()%>"
-                        data-lrno="<%=row.get(4).toString().toLowerCase()%>"
+                        data-lrno="<%=row.get(4).toString().toLowerCase().replace("\r", " ").replace("\n", " ").replace("\"", "&quot;")%>"
                         data-dpf="<%=String.format("%.2f", dpf)%>"
                         data-lh="<%=String.format("%.2f", lh)%>"
                         data-loadamt="<%=String.format("%.2f", load)%>"
@@ -490,6 +490,9 @@ if (orders.isEmpty()) {
         </button>
         <a id="bmBtnPrint" href="#" target="_blank" class="bb bb-secondary">
           <i class="fas fa-print me-1"></i>Print
+        </a>
+        <a id="bmBtnDuplicatePrint" href="#" target="_blank" class="bb bb-secondary">
+          <i class="fas fa-print me-1"></i>Duplicate Print
         </a>
         <button type="button" class="bb bb-outline" data-bs-dismiss="modal">
           <i class="fas fa-times me-1"></i>Close
@@ -711,21 +714,26 @@ function saveEdit() {
 }
 
 // ── Live table filters ──────────────────────────────────────────
+function rowFilterText($row, attrName) {
+    return String($row.attr('data-' + attrName) || '').toLowerCase();
+}
+
 function applyFilters() {
     const customer = $('#fltCustomer').val().trim().toLowerCase();
     const supplier = $('#fltSupplier').val().trim().toLowerCase();
     const dest     = $('#fltDest').val().trim().toLowerCase();
-    const lrno     = $('#fltLrNo').val().trim().toLowerCase();
+    const lrno     = $('#fltLrNo').val().trim().toLowerCase().replace(/\s+/g, ' ');
     const status   = $('#fltStatus').val().toLowerCase();
 
     $('#orderTable tbody tr.view-row').each(function() {
         const r = $(this);
+        const rowLr = rowFilterText(r, 'lrno').replace(/\s+/g, ' ');
         const match =
-            (!customer || r.data('customer').includes(customer)) &&
-            (!supplier || r.data('supplier').includes(supplier)) &&
-            (!dest     || r.data('dest').includes(dest))         &&
-            (!lrno     || r.data('lrno').includes(lrno))         &&
-            (!status   || r.data('status') === status);
+            (!customer || rowFilterText(r, 'customer').includes(customer)) &&
+            (!supplier || rowFilterText(r, 'supplier').includes(supplier)) &&
+            (!dest     || rowFilterText(r, 'dest').includes(dest))         &&
+            (!lrno     || rowLr.includes(lrno))                            &&
+            (!status   || rowFilterText(r, 'status') === status);
         r.toggle(match);
     });
     updateSummaryTotals();
@@ -795,7 +803,9 @@ function showBillModal(lrId, lrNo, billId) {
     _bm_lrId   = lrId;
     $('#bm_lrNo').text(lrNo);
     $('#bmBtnCancelBill').data('billid', billId);
-    $('#bmBtnPrint').attr('href', contextPath + '/logistics/transportBill/print.jsp?billId=' + billId + '&source=orderList');
+    var printBase = contextPath + '/logistics/transportBill/print.jsp?billId=' + billId + '&source=orderList';
+    $('#bmBtnPrint').attr('href', printBase + '&copy=original');
+    $('#bmBtnDuplicatePrint').attr('href', printBase + '&copy=duplicate');
     $('#billModalBody').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
     var modal = new bootstrap.Modal(document.getElementById('billModal'));
     modal.show();

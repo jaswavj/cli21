@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS transport_lr_copy (
     to_location VARCHAR(255) DEFAULT NULL,
     consignee_name VARCHAR(255) DEFAULT NULL,
 
-    no_of_articles VARCHAR(100) DEFAULT NULL,
-    description_text VARCHAR(255) DEFAULT NULL,
+    no_of_articles TEXT DEFAULT NULL,
+    description_text TEXT DEFAULT NULL,
     weight_mt VARCHAR(100) DEFAULT NULL,
 
     mode_payment1 VARCHAR(255) DEFAULT NULL,

@@ -35,6 +35,30 @@ try {
         .tbl-amt { text-align:right; min-width:90px; }
         .status-active { color:#198754; font-weight:700; }
         .status-cancel { color:#dc3545; font-weight:700; }
+        #lrReportTable {
+            table-layout: fixed;
+            width: 100%;
+            margin-bottom: 0;
+            font-size: 0.875rem;
+        }
+        #lrReportTable th,
+        #lrReportTable td {
+            padding: 0.4rem 0.45rem;
+            vertical-align: top;
+        }
+        #lrReportTable .col-customer,
+        #lrReportTable .col-consignee {
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+        }
+        #lrReportTable .col-action .btn {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.35rem;
+        }
+        .lr-report-table-wrap {
+            overflow-x: hidden;
+        }
     </style>
 </head>
 <body>
@@ -70,21 +94,34 @@ try {
 
     <div class="card mst-card">
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="lr-report-table-wrap">
                 <table class="table table-bordered table-hover mb-0" id="lrReportTable">
+                    <colgroup>
+                        <col style="width:3%;">
+                        <col style="width:6%;">
+                        <col style="width:7%;">
+                        <col style="width:14%;">
+                        <col style="width:8%;">
+                        <col style="width:7%;">
+                        <col style="width:7%;">
+                        <col style="width:7%;">
+                        <col style="width:14%;">
+                        <col style="width:6%;">
+                        <col style="width:21%;">
+                    </colgroup>
                     <thead class="table-dark">
                         <tr>
                             <th>#</th>
                             <th>LR No</th>
                             <th>Date</th>
-                            <th>Customer</th>
+                            <th class="col-customer">Customer</th>
                             <th>Phone</th>
                             <th>From</th>
                             <th>To</th>
                             <th>Truck</th>
-                            <th>Consignee</th>
+                            <th class="col-consignee">Consignee</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th class="col-action">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -117,12 +154,12 @@ if (rows.isEmpty()) {
                             <td><%=i + 1%></td>
                             <td><strong><%=lrNo%></strong></td>
                             <td><%=lrDateDisp%></td>
-                            <td><%=customerName%></td>
+                            <td class="col-customer"><%=customerName%></td>
                             <td><%=phone%></td>
                             <td><%=fromLoc%></td>
                             <td><%=toLoc%></td>
                             <td><%=truckNo%></td>
-                            <td><%=consignee%></td>
+                            <td class="col-consignee"><%=consignee%></td>
                             <td>
                                 <% if (isCancelled == 1) { %>
                                 <span class="status-cancel">Cancelled</span>

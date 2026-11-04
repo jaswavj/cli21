@@ -40,15 +40,12 @@ nf.setMinimumFractionDigits(2); nf.setMaximumFractionDigits(2);
 
 String contextPath = request.getContextPath();
 String source = request.getParameter("source");
-String referer = request.getHeader("Referer");
+String copyParam = request.getParameter("copy");
 String copyLabel = "Original";
-if (source != null && source.equalsIgnoreCase("orderList")) {
-    copyLabel = "Original";
-} else if (source == null || source.trim().isEmpty()) {
-    if (referer != null && referer.contains("/logistics/orderList/")) {
-        copyLabel = "Original";
-    }
+if (copyParam != null && copyParam.trim().equalsIgnoreCase("duplicate")) {
+    copyLabel = "Duplicate";
 }
+boolean isDuplicateCopy = "Duplicate".equals(copyLabel);
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -314,6 +311,13 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         color: #555;
         text-transform: none;
     }
+    .title-copy-tag.is-duplicate {
+        color: #b91c1c;
+        font-style: normal;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
     /* ── Two-column info section ── */
     .info-grid { display: flex; gap: 0; border: 1px solid #000; margin-bottom: 0; }
@@ -372,6 +376,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
     .footer-sign .sign-title { font-size: 13px; font-weight: 700; margin-bottom: 46px; }
     .footer-sign .sign-line { border-top: 1px solid #000; font-size: 12px; font-weight: 700; padding-top: 3px; }
 
+    .bill-summary-table { margin-top: -1px; }
     .words-row { border: 1px solid #000; border-top: none; padding: 6px 10px; font-size: 13px; font-weight: 600; margin-bottom: 0; }
     .page-content {
         flex: 1;
@@ -451,8 +456,13 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
 <div class="no-print" style="padding:10px 20px;background:#343a40;display:flex;align-items:center;gap:12px;">
     <span style="color:#fff;font-weight:600;font-size:14px;">Transportation Bill — <%= hdr.get(0) %></span>
     <button onclick="paginateBill(); window.print()" style="background:#198754;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;">
-        &#128424; Print
+        &#128424; Print (<%= copyLabel %>)
     </button>
+    <% if (!isDuplicateCopy) { %>
+    <button onclick="window.location.href='<%= contextPath %>/logistics/transportBill/print.jsp?billId=<%= billId %>&source=<%= source != null ? java.net.URLEncoder.encode(source, "UTF-8") : "" %>&copy=duplicate';" style="background:#b45309;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;">
+        &#128424; Duplicate Print
+    </button>
+    <% } %>
     <button onclick="window.close()" style="background:#6c757d;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;">
         &#10005; Close
     </button>
@@ -507,7 +517,7 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
     <!-- ── Title ── -->
     <div class="title-bar">
         Transportation Bill
-        <span class="title-copy-tag"><%= copyLabel %></span>
+        <span class="title-copy-tag<%= isDuplicateCopy ? " is-duplicate" : "" %>"><%= copyLabel %></span>
     </div>
 
     <!-- ── Info grid ── -->
@@ -629,14 +639,6 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
         }
         %>
 
-        <!-- Grand Total row -->
-        <tr class="total-row">
-            <td colspan="5" style="text-align:right;padding-right:8px;">
-                Total
-                
-            </td>
-            <td class="td-amount"><%= nf.format(runningTotal) %></td>
-        </tr>
         </tbody>
     </table>
 
@@ -646,6 +648,12 @@ if (source != null && source.equalsIgnoreCase("orderList")) {
     String inWords = amountToWords(rupees) + " Only.";
     %>
     <div class="bill-footer-wrap">
+    <table class="bill-table bill-summary-table">
+        <tr class="total-row">
+            <td colspan="5" style="text-align:right;padding-right:8px;">Total</td>
+            <td class="td-amount"><%= nf.format(runningTotal) %></td>
+        </tr>
+    </table>
     <div class="words-row">Rupees <%= inWords %></div>
 
     <!-- ── Footer ── -->
@@ -711,11 +719,10 @@ function paginateBill() {
 
     var theadHtml = table.querySelector('thead').outerHTML;
     var tbody = table.querySelector('tbody');
-    var dataRows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
-    var totalRow = tbody.querySelector('tr.total-row');
+    var dataRows = Array.from(tbody.querySelectorAll('tr'));
 
     var lh = letterheadTpl.offsetHeight;
-    var firstH = firstBlock ? firstBlock.offsetHeight : 0;
+    var blockH = firstBlock ? firstBlock.offsetHeight : 0;
     var th = table.querySelector('thead').offsetHeight;
     var rowH = 30;
     if (dataRows.length) {
@@ -723,24 +730,23 @@ function paginateBill() {
         dataRows.forEach(function(row) { totalRowH += row.offsetHeight; });
         rowH = Math.max(24, Math.round(totalRowH / dataRows.length));
     }
-    var footerH = footerWrap.offsetHeight + (totalRow ? totalRow.offsetHeight : 0);
+    var footerH = footerWrap.offsetHeight;
 
-    var singleMax = Math.max(1, Math.floor((PAGE_H - lh - firstH - th - footerH) / rowH));
-    var firstMax = Math.max(1, Math.floor((PAGE_H - lh - firstH - th) / rowH) - 1);
-    var contMax = Math.max(1, Math.floor((PAGE_H - lh - th) / rowH) - 1);
-    var lastMax = Math.max(1, Math.floor((PAGE_H - lh - th - footerH) / rowH) - 1);
+    var pageRowsMax = Math.max(1, Math.floor((PAGE_H - lh - blockH - th) / rowH) - 1);
+    var singleMax = Math.max(1, Math.floor((PAGE_H - lh - blockH - th - footerH) / rowH));
+    var lastMax = Math.max(1, Math.floor((PAGE_H - lh - blockH - th - footerH) / rowH) - 1);
 
     var remaining = dataRows.slice();
     var pagePlans = [];
 
     if (remaining.length <= singleMax) {
-        pagePlans.push({ rows: remaining.slice(), isFirst: true, isLast: true });
+        pagePlans.push({ rows: remaining.slice(), isLast: true });
     } else {
-        pagePlans.push({ rows: remaining.splice(0, firstMax), isFirst: true, isLast: false });
+        pagePlans.push({ rows: remaining.splice(0, pageRowsMax), isLast: false });
         while (remaining.length > lastMax) {
-            pagePlans.push({ rows: remaining.splice(0, contMax), isFirst: false, isLast: false });
+            pagePlans.push({ rows: remaining.splice(0, pageRowsMax), isLast: false });
         }
-        pagePlans.push({ rows: remaining.slice(), isFirst: false, isLast: true });
+        pagePlans.push({ rows: remaining.slice(), isLast: true });
     }
 
     var totalPages = pagePlans.length;
@@ -756,7 +762,7 @@ function paginateBill() {
         var content = document.createElement('div');
         content.className = 'page-content';
 
-        if (plan.isFirst && firstBlock) {
+        if (firstBlock) {
             content.appendChild(firstBlock.cloneNode(true));
         }
 
@@ -769,9 +775,6 @@ function paginateBill() {
         plan.rows.forEach(function(row) {
             newBody.appendChild(row.cloneNode(true));
         });
-        if (plan.isLast && totalRow) {
-            newBody.appendChild(totalRow.cloneNode(true));
-        }
         tbl.appendChild(newBody);
         tableWrap.appendChild(tbl);
         content.appendChild(tableWrap);

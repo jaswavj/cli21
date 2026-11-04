@@ -59,7 +59,11 @@ String consigneeName = lr.get(9).toString();
 String consigneeAddress = "";
 try { consigneeAddress = bill.getCustomerAddressByName(consigneeName); } catch (Exception ignore) {}
 String noOfArticles = lr.get(10).toString();
+String noOfArticlesPrint = (noOfArticles == null ? "" : noOfArticles)
+    .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 String descriptionText = lr.get(11).toString();
+String descriptionTextPrint = (descriptionText == null ? "" : descriptionText)
+    .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 String weightMt = lr.get(12).toString();
 String modePayment1 = lr.get(13).toString();
 boolean toBeBilledInChennai = modePayment1 != null && modePayment1.toLowerCase().contains("billed in chennai");
@@ -123,9 +127,11 @@ String companyName = co.get(0).toString();
 companyName = companyName.replaceAll("(?i)<br\\s*/?>", " ").replace('\n', ' ').replace('\r', ' ').trim();
 String companyAddressPrint = co.get(1).toString().replaceAll("(?i)<br\\s*/?>", ", ").replace('\n', ' ').replace('\r', ' ').trim();
 String companyContactPrint = "99941 82275, 98844 83426";
-String qrContent = companyName + "\n" + companyAddressPrint + "\nCell: " + companyContactPrint;
-String qrContentJs = qrContent.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "").replace("\n", "\\n");
-String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+", "%20");
+String lrAssetDir = application.getRealPath("/logistics/LR");
+boolean hasWhatsappQr = new java.io.File(lrAssetDir, "whatsapp qr.jpeg").exists();
+boolean hasClerkSign = new java.io.File(lrAssetDir, "sign.png").exists();
+String whatsappQrSrc = contextPath + "/logistics/LR/whatsapp%20qr.jpeg";
+String clerkSignSrc = contextPath + "/logistics/LR/sign.png";
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,7 +140,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
 <title>LR Copy - <%=lrNo%></title>
 <style>
     * { box-sizing: border-box; }
-    body { margin:0; font-family: Arial, Helvetica, sans-serif; color:#0b2f63; font-size:12px; background:#fff; }
+    body { margin:0; font-family: Arial, Helvetica, sans-serif; color:#0b2f63; font-size:12px; background:#c8c8c8; }
     .page {
         width: 210mm;
         min-height: 297mm;
@@ -144,7 +150,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
         display: flex;
         flex-direction: column;
         border: 1px solid #5a5a5a;
-        background: #fff;
+        background: #ffff99;
     }
 
     .print-header {
@@ -247,16 +253,23 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     .header-divider + .title-bar { margin-top:-1px; }
 
     .box { border:1px solid #000; margin-bottom:0; }
-    .info-row .cell { width:33.33%; }
-    .route-row .cell { width:50%; }
-    .info-row .inline-pair,
-    .route-row .inline-pair { margin-bottom:0; }
-    .info-row .val,
-    .route-row .val { font-size:15px; font-weight:700; min-height:0; }
-    .row { display:flex; }
-    .cell { border-right:1px solid #000; border-bottom:1px solid #000; padding:7px 9px; font-size:13px; }
-    .cell:last-child { border-right:none; }
-    .row:last-child .cell { border-bottom:none; }
+    table.header-box {
+        width:100%;
+        border-collapse:collapse;
+        border-spacing:0;
+        table-layout:fixed;
+        border:1px solid #000;
+        margin:0;
+        empty-cells:show;
+    }
+    table.header-box td {
+        border:1px solid #000;
+        padding:7px 9px;
+        font-size:13px;
+        vertical-align:top;
+        background:#ffff99;
+        color:#0b2f63;
+    }
     .lbl {
         font-size:12px;
         color:#0b2f63;
@@ -347,12 +360,13 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     .w40 { width:40%; } .w60 { width:60%; } .w25 { width:25%; } .w20 { width:20%; } .w15 { width:15%; } .w35 { width:35%; } .w33 { width:33.33%; } .w50 { width:50%; }
 
     table.lr-table { width:100%; border-collapse:collapse; margin-top:0; }
-    .lr-table th, .lr-table td { border:1px solid #000; padding:7px 9px; font-size:15px; font-weight:700; vertical-align:top; color:#0b2f63; }
-    .lr-table th { background:#ececec; text-transform:none; font-size:14px; font-weight:700; text-align:center; }
-    .lr-table td:nth-child(1), .lr-table td:nth-child(2) { text-align:center; }
+    .lr-table th, .lr-table td { border:1px solid #000; padding:7px 9px; font-size:15px; font-weight:700; vertical-align:top; color:#0b2f63; background:#ffff99; }
+    .lr-table th { text-transform:none; font-size:14px; font-weight:700; text-align:center; }
+    .lr-table td:nth-child(1), .lr-table td:nth-child(2) { text-align:left; white-space:pre-wrap; word-break:break-word; }
+    .lr-table td.desc-cell { text-align:left; white-space:pre-wrap; word-break:break-word; }
 
     .mode-grid { display:grid; grid-template-columns: 1fr; gap:2px; }
-    .mode-item { border:1px solid #777; padding:5px 7px; font-size:14px; font-weight:700; color:#0b2f63; }
+    .mode-item { border:1px solid #777; padding:5px 7px; font-size:14px; font-weight:700; color:#0b2f63; background:#ffff99; }
 
     .detail-grid {
         width:100%;
@@ -363,6 +377,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
         border:1px solid #000;
         padding:7px 9px;
         vertical-align:top;
+        background:#ffff99;
     }
     .detail-grid td.detail-split-cell { padding:0; }
     .detail-grid td.deliver-cell { vertical-align:bottom; }
@@ -370,6 +385,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
         vertical-align:middle;
         text-align:center;
         padding:4px;
+        background:#ffff99;
     }
     .detail-grid td.qr-cell canvas,
     .detail-grid td.qr-cell img {
@@ -468,7 +484,25 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
         border:2.5px solid #a63a2f;
         border-radius:50%;
     }
-    .clerk-box { width:40%; display:flex; flex-direction:column; justify-content:flex-end; padding:10px; }
+    .clerk-box { width:40%; display:flex; flex-direction:column; justify-content:flex-end; padding:10px; background:#ffff99; }
+    .clerk-sign-img,
+    .lr-whatsapp-qr {
+        display:block;
+        max-width:100%;
+        margin:0 auto;
+        object-fit:contain;
+        background:transparent;
+        mix-blend-mode:multiply;
+    }
+    .clerk-sign-img {
+        max-height:72px;
+        margin-bottom:6px;
+    }
+    .lr-whatsapp-qr {
+        width:100%;
+        max-width:108px;
+        height:auto;
+    }
     .sign-line { border-top:1px solid #000; text-align:center; font-size:11px; font-weight:700; padding-top:4px; }
 
     .print-note {
@@ -557,7 +591,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
         border:1px solid #000;
         border-left:1px solid #000;
         margin-left:-1px;
-        background:#fff;
+        background:#ffff99;
         display:flex;
         align-items:center;
         justify-content:center;
@@ -599,6 +633,7 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
             padding: 0;
             overflow: visible;
             height: auto;
+            background: #ffff99 !important;
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
         }
@@ -606,12 +641,36 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
             margin: 0 auto;
             min-height: 297mm;
             height: 297mm;
+            background: #ffff99 !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
             page-break-after: always;
             break-after: page;
         }
         .page:last-of-type {
             page-break-after: auto;
             break-after: auto;
+        }
+        .clerk-sign-img,
+        .lr-whatsapp-qr {
+            mix-blend-mode: multiply;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        table.header-box,
+        table.header-box td {
+            border: 1px solid #000 !important;
+            background: #ffff99 !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        .detail-grid td.qr-cell,
+        .clerk-box,
+        .footer-sign,
+        .footer-grid {
+            background: #ffff99 !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
         }
         .page-terms {
             page-break-before: always;
@@ -681,38 +740,46 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
 
     <div class="title-bar"><span class="copy-part"><%=copyTitleHeading%></span><span class="risk-part"> | BOOKED AT OWNER'S RISK</span></div>
 
-    <div class="box">
-        <div class="row info-row">
-            <div class="cell w33">
-                <div class="field-split">
-                    <span class="field-lbl">LR No :</span> <span class="field-val"><%=lrNo%></span>
-                </div>
-            </div>
-            <div class="cell w33">
-                <div class="field-split">
-                    <span class="field-lbl">Date :</span> <span class="field-val"><%=lrDate%></span>
-                </div>
-            </div>
-            <div class="cell w33">
+    <table class="box header-box">
+        <colgroup>
+            <col style="width:16.66%;">
+            <col style="width:16.67%;">
+            <col style="width:16.66%;">
+            <col style="width:16.67%;">
+            <col style="width:16.66%;">
+            <col style="width:16.68%;">
+        </colgroup>
+        <tr>
+            <td colspan="2">
                 <div class="field-split">
                     <span class="field-lbl">Truck No :</span> <span class="field-val"><%=truckNo%></span>
                 </div>
-            </div>
-        </div>
-        <div class="row route-row">
-            <div class="cell w50">
+            </td>
+            <td colspan="2">
+                <div class="field-split">
+                    <span class="field-lbl">Date :</span> <span class="field-val"><%=lrDate%></span>
+                </div>
+            </td>
+            <td colspan="2">
+                <div class="field-split">
+                    <span class="field-lbl">LR No :</span> <span class="field-val"><%=lrNo%></span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
                 <div class="field-split">
                     <span class="field-lbl">From :</span> <span class="field-val"><%=fromLocation%></span>
                 </div>
-            </div>
-            <div class="cell w50">
+            </td>
+            <td colspan="3">
                 <div class="field-split">
                     <span class="field-lbl">To :</span> <span class="field-val"><%=toLocation%></span>
                 </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="cell w50">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
                 <div class="party-block">
                     <div class="party-line">
                         <span class="party-lbl">Consignor Name &amp; Address :</span>
@@ -720,8 +787,8 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
                     <div class="party-name"><%=customerName%></div>
                     <div class="party-addr"><%= (customerAddress == null ? "" : customerAddress.replace("\r", " ").replace("\n", " ")) %><% if (phone != null && !phone.trim().isEmpty()) { %> / <%=phone%><% } %></div>
                 </div>
-            </div>
-            <div class="cell w50">
+            </td>
+            <td colspan="3">
                 <div class="party-block">
                     <div class="party-line">
                         <span class="party-lbl">Consignee Name &amp; Address :</span>
@@ -729,9 +796,9 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
                     <div class="party-name"><%=consigneeName%></div>
                     <div class="party-addr"><%= (consigneeAddress == null ? "" : consigneeAddress.replace("\r", " ").replace("\n", " ")) %></div>
                 </div>
-            </div>
-        </div>
-    </div>
+            </td>
+        </tr>
+    </table>
 
     <div class="body-with-gst">
         <div class="body-main">
@@ -745,8 +812,8 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
         </thead>
         <tbody>
             <tr>
-                <td><%=noOfArticles%></td>
-                <td><%=descriptionText%></td>
+                <td><%=noOfArticlesPrint%></td>
+                <td class="desc-cell"><%=descriptionTextPrint%></td>
                 <td>
                     <div class="mode-grid">
                         <% if (toBeBilledInChennai) { %>
@@ -793,8 +860,9 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
             <tr>
                 <td><span class="detail-lbl">Material Received Date</span><div class="detail-val"><%=materialReceivedDate%></div></td>
                 <td rowspan="3" class="qr-cell">
-                    <canvas id="companyQrCanvas" width="108" height="108"></canvas>
-                    <img id="companyQrFallback" style="display:none;" src="https://api.qrserver.com/v1/create-qr-code/?size=108x108&amp;margin=0&amp;data=<%=qrDataEncoded%>" alt="Company QR">
+                    <% if (hasWhatsappQr) { %>
+                    <img class="lr-whatsapp-qr" src="<%=whatsappQrSrc%>" alt="WhatsApp QR">
+                    <% } %>
                 </td>
             </tr>
             <tr>
@@ -828,6 +896,9 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
                 <div class="recv-oval"></div>
             </div>
             <div class="clerk-box">
+                <% if (hasClerkSign) { %>
+                <img class="clerk-sign-img" src="<%=clerkSignSrc%>" alt="Booking Clerk Signature">
+                <% } %>
                 <div class="sign-line">Signature of Booking Clerk and Date</div>
             </div>
         </div>
@@ -863,31 +934,8 @@ String qrDataEncoded = java.net.URLEncoder.encode(qrContent, "UTF-8").replace("+
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
-var companyQrText = "<%=qrContentJs%>";
-
-function startPrint() { window.print(); }
-
-function showQrFallback() {
-    var canvas = document.getElementById('companyQrCanvas');
-    var fallback = document.getElementById('companyQrFallback');
-    if (canvas) canvas.style.display = 'none';
-    if (fallback) fallback.style.display = 'block';
-    startPrint();
-}
-
-window.onload = function() {
-    var canvas = document.getElementById('companyQrCanvas');
-    if (canvas && typeof QRCode !== 'undefined') {
-        QRCode.toCanvas(canvas, companyQrText, { width: 108, margin: 1 }, function(err) {
-            if (err) showQrFallback();
-            else startPrint();
-        });
-    } else {
-        showQrFallback();
-    }
-};
+window.onload = function() { window.print(); };
 window.onafterprint = function() { window.close(); };
 </script>
 </body>
